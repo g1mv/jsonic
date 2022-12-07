@@ -9,11 +9,12 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const JSON: &str = "{\"test\": \"why not?\",\"another\":\"hey\"  ,\"num\":4.2344, \"int\":234,\"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3]}";
+    const CORRECT_JSON: &str = "{\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3]}";
+    const WRONG_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
     fn parse_string() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -34,7 +35,7 @@ mod tests {
 
     #[test]
     fn parse_float() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -51,7 +52,7 @@ mod tests {
 
     #[test]
     fn parse_int() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -68,7 +69,7 @@ mod tests {
 
     #[test]
     fn parse_obj() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -85,7 +86,7 @@ mod tests {
 
     #[test]
     fn parse_array() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -102,7 +103,7 @@ mod tests {
 
     #[test]
     fn missing_key() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -116,7 +117,7 @@ mod tests {
 
     #[test]
     fn missing_key_get_value() {
-        let mut parser = JsonParser::new(JSON);
+        let mut parser = JsonParser::new(CORRECT_JSON);
 
         match parser.parse() {
             Ok(parsed) => {
@@ -127,6 +128,20 @@ mod tests {
             }
             Err(_) => {
                 assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn wrong_json() {
+        let mut parser = JsonParser::new(WRONG_JSON);
+
+        match parser.parse() {
+            Ok(_) => {
+                assert!(false);
+            }
+            Err(_) => {
+                assert!(true);
             }
         }
     }
