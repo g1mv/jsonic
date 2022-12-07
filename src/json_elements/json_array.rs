@@ -13,12 +13,6 @@ impl JsonArray<'_> {
         };
     }
 
-    pub const fn empty() -> Self {
-        return JsonArray {
-            vec: Vec::with_capacity(0)
-        };
-    }
-
     pub fn iter(&self) -> std::slice::Iter<'_, JsonElement> {
         return self.vec.iter();
     }

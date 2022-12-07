@@ -15,12 +15,6 @@ impl JsonObject<'_> {
         };
     }
 
-    pub const fn empty() -> Self {
-        return JsonObject {
-            map: BTreeMap::new()
-        };
-    }
-
     pub fn check_for(&self, key: &str) -> Option<&JsonElement> {
         return self.map.get(key);
     }

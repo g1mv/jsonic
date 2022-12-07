@@ -1,10 +1,10 @@
-use std::borrow::Borrow;
 use std::ops::Index;
 
 use crate::json_elements::json_array::JsonArray;
 use crate::json_elements::json_number::JsonNumber;
 use crate::json_elements::json_object::JsonObject;
-use crate::json_types::{JsonNumberType, JsonType};
+use crate::json_types::JsonType;
+use crate::json_types::JsonType::JsonEmpty;
 use crate::slice::Slice;
 
 static EMPTY_ELEMENT: JsonElement = JsonElement::empty();
@@ -13,10 +13,10 @@ static EMPTY_ELEMENT: JsonElement = JsonElement::empty();
 pub struct JsonElement<'a> {
     pub json_type: JsonType,
     pub slice: Slice<'a>,
-    pub boolean: bool,
-    pub number: JsonNumber,
-    pub object: JsonObject<'a>,
-    pub array: JsonArray<'a>,
+    pub boolean: Option<bool>,
+    pub number: Option<JsonNumber>,
+    pub object: Option<JsonObject<'a>>,
+    pub array: Option<JsonArray<'a>>,
 }
 
 impl<'a> JsonElement<'_> {
@@ -28,44 +28,44 @@ impl<'a> JsonElement<'_> {
         return &self.slice;
     }
 
-    pub fn from_type(json_type: JsonType, slice: Slice<'a>) -> JsonElement<'a> {
+    fn from_type_slice(json_type: JsonType, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
             json_type,
             slice,
-            boolean: false,
-            number: JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonInteger },
-            object: JsonObject::empty(),
-            array: JsonArray::empty(),
+            boolean: None,
+            number: None,
+            object: None,
+            array: None,
         };
     }
 
     pub fn from_null(slice: Slice<'a>) -> JsonElement<'a> {
-        return JsonElement::from_type(JsonType::JsonNull, slice);
+        return JsonElement::from_type_slice(JsonType::JsonNull, slice);
     }
 
     pub fn from_boolean(boolean: bool, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
             json_type: JsonType::JsonBoolean,
             slice,
-            boolean,
-            number: JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonInteger },
-            object: JsonObject::empty(),
-            array: JsonArray::empty(),
+            boolean: Some(boolean),
+            number: None,
+            object: None,
+            array: None,
         };
     }
 
-    // pub fn from_string(slice: Slice) -> Self {
-    //     return JsonElement::from_type(JsonType::JsonString, slice);
-    // }
+    pub fn from_string(slice: Slice<'a>) -> JsonElement<'a> {
+        return JsonElement::from_type_slice(JsonType::JsonString, slice);
+    }
 
     pub fn from_number(number: JsonNumber, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
             json_type: JsonType::JsonNumber,
             slice,
-            boolean: false,
-            number,
-            object: JsonObject::empty(),
-            array: JsonArray::empty(),
+            boolean: None,
+            number: Some(number),
+            object: None,
+            array: None,
         };
     }
 
@@ -73,10 +73,10 @@ impl<'a> JsonElement<'_> {
         return JsonElement {
             json_type: JsonType::JsonObject,
             slice,
-            boolean: false,
-            number: JsonNumber::empty(),
-            object,
-            array: JsonArray::empty(),
+            boolean: None,
+            number: None,
+            object: Some(object),
+            array: None,
         };
     }
 
@@ -84,33 +84,49 @@ impl<'a> JsonElement<'_> {
         return JsonElement {
             json_type: JsonType::JsonArray,
             slice,
-            boolean: false,
-            number: JsonNumber::empty(),
-            object: JsonObject::empty(),
-            array,
+            boolean: None,
+            number: None,
+            object: None,
+            array: Some(array),
         };
     }
 
-    pub fn empty() -> JsonElement<'a> {
+    pub const fn empty() -> JsonElement<'a> {
         return JsonElement {
             json_type: JsonType::JsonEmpty,
-            slice: Slice{
+            slice: Slice {
                 source: &[],
                 beginning: 0,
                 end: 0,
             },
-            boolean: false,
-            number: JsonNumber::empty(),
-            object: JsonObject::empty(),
-            array: JsonArray::empty(),
+            boolean: None,
+            number: None,
+            object: None,
+            array: None,
         };
+    }
+
+    pub fn exists(&self) -> bool {
+        return self.json_type != JsonEmpty;
     }
 
     pub fn as_str(&self) -> Option<&str> {
         match self.json_type {
-            JsonType::JsonString => {
-                return Some(self.get_slice().as_str());
-            }
+            JsonType::JsonEmpty => { None }
+            _ => { Some(self.get_slice().as_str()) }
+        }
+    }
+
+    pub fn as_i128(&self) -> Option<i128> {
+        match self.json_type {
+            JsonType::JsonNumber => { Some(self.number.as_ref().unwrap().i128()) }
+            _ => { None }
+        }
+    }
+
+    pub fn as_f64(&self) -> Option<f64> {
+        match self.json_type {
+            JsonType::JsonNumber => { Some(self.number.as_ref().unwrap().f64()) }
             _ => { None }
         }
     }
@@ -122,11 +138,26 @@ impl<'a> Index<&'a str> for JsonElement<'a> {
     fn index(&self, key: &str) -> &Self::Output {
         return match self.json_type {
             JsonType::JsonObject => {
-                &self.object.map[key]
+                return self.object.as_ref().unwrap().map.get(key).unwrap_or(&EMPTY_ELEMENT);
             }
             _ => {
                 &EMPTY_ELEMENT
             }
-        }
+        };
+    }
+}
+
+impl<'a> Index<usize> for JsonElement<'a> {
+    type Output = JsonElement<'a>;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        return match self.json_type {
+            JsonType::JsonArray => {
+                return self.array.as_ref().unwrap().vec.get(index).unwrap_or(&EMPTY_ELEMENT);
+            }
+            _ => {
+                &EMPTY_ELEMENT
+            }
+        };
     }
 }
