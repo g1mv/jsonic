@@ -13,7 +13,7 @@ impl JsonArray<'_> {
         };
     }
 
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         return JsonArray {
             vec: Vec::with_capacity(0)
         };

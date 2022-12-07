@@ -5,21 +5,21 @@ use crate::json_elements::json_array::JsonArray;
 use crate::json_elements::json_number::JsonNumber;
 use crate::json_elements::json_object::JsonObject;
 use crate::json_error::JsonError;
-use crate::json_types::{JsonType, JsonNumberType};
+use crate::json_types::{JsonNumberType, JsonType};
 use crate::slice::Slice;
 
 const EXP_MATRIX: [[f64; 65]; 2] = [[1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27, 1e28, 1e29, 1e30, 1e31, 1e32, 1e33, 1e34, 1e35, 1e36, 1e37, 1e38, 1e39, 1e40, 1e41, 1e42, 1e43, 1e44, 1e45, 1e46, 1e47, 1e48, 1e49, 1e50, 1e51, 1e52, 1e53, 1e54, 1e55, 1e56, 1e57, 1e58, 1e59, 1e60, 1e61, 1e62, 1e63, 1e64], [1e-0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15, 1e-16, 1e-17, 1e-18, 1e-19, 1e-20, 1e-21, 1e-22, 1e-23, 1e-24, 1e-25, 1e-26, 1e-27, 1e-28, 1e-29, 1e-30, 1e-31, 1e-32, 1e-33, 1e-34, 1e-35, 1e-36, 1e-37, 1e-38, 1e-39, 1e-40, 1e-41, 1e-42, 1e-43, 1e-44, 1e-45, 1e-46, 1e-47, 1e-48, 1e-49, 1e-50, 1e-51, 1e-52, 1e-53, 1e-54, 1e-55, 1e-56, 1e-57, 1e-58, 1e-59, 1e-60, 1e-61, 1e-62, 1e-63, 1e-64]];
 
-pub struct Parser<'a> {
+pub struct JsonParser<'a> {
     source: &'a [u8],
     index: usize,
     length: usize,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(text: &'a str) -> Parser<'a> {
+impl<'a> JsonParser<'a> {
+    pub fn new(text: &'a str) -> JsonParser<'a> {
         let source = text.as_bytes();
-        Parser {
+        JsonParser {
             source,
             index: 0,
             length: source.len(),
@@ -354,7 +354,6 @@ impl<'a> Parser<'a> {
         return Err(JsonError::new(self.index));
     }
 
-    #[inline(always)]
     pub fn parse(&mut self) -> Result<JsonElement, JsonError> {
         while self.index < self.length {
             let b = self.next_byte();

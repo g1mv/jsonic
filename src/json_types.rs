@@ -6,6 +6,7 @@ pub enum JsonType {
     JsonNumber,
     JsonObject,
     JsonArray,
+    JsonEmpty
 }
 
 #[derive(Debug, PartialEq)]

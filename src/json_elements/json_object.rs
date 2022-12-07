@@ -15,7 +15,7 @@ impl JsonObject<'_> {
         };
     }
 
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         return JsonObject {
             map: BTreeMap::new()
         };
@@ -29,7 +29,6 @@ impl JsonObject<'_> {
         return self.map.iter();
     }
 }
-
 
 impl<'a> Index<&str> for JsonObject<'a> {
     type Output = JsonElement<'a>;

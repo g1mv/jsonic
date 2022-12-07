@@ -13,7 +13,3 @@ codegen-units = 1
 panic = "unwind"
 incremental = false
 overflow-checks = false
-
-[[bin]]
-name = "jsonic"
-path = "src/main.rs"

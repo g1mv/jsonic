@@ -1,8 +1,13 @@
+use std::borrow::Borrow;
+use std::ops::Index;
+
 use crate::json_elements::json_array::JsonArray;
 use crate::json_elements::json_number::JsonNumber;
 use crate::json_elements::json_object::JsonObject;
+use crate::json_types::{JsonNumberType, JsonType};
 use crate::slice::Slice;
-use crate::json_types::{JsonType, JsonNumberType};
+
+static EMPTY_ELEMENT: JsonElement = JsonElement::empty();
 
 #[derive(Debug)]
 pub struct JsonElement<'a> {
@@ -69,7 +74,7 @@ impl<'a> JsonElement<'_> {
             json_type: JsonType::JsonObject,
             slice,
             boolean: false,
-            number: JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonInteger },
+            number: JsonNumber::empty(),
             object,
             array: JsonArray::empty(),
         };
@@ -80,9 +85,48 @@ impl<'a> JsonElement<'_> {
             json_type: JsonType::JsonArray,
             slice,
             boolean: false,
-            number: JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonInteger },
+            number: JsonNumber::empty(),
             object: JsonObject::empty(),
             array,
         };
+    }
+
+    pub fn empty() -> JsonElement<'a> {
+        return JsonElement {
+            json_type: JsonType::JsonEmpty,
+            slice: Slice{
+                source: &[],
+                beginning: 0,
+                end: 0,
+            },
+            boolean: false,
+            number: JsonNumber::empty(),
+            object: JsonObject::empty(),
+            array: JsonArray::empty(),
+        };
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        match self.json_type {
+            JsonType::JsonString => {
+                return Some(self.get_slice().as_str());
+            }
+            _ => { None }
+        }
+    }
+}
+
+impl<'a> Index<&'a str> for JsonElement<'a> {
+    type Output = JsonElement<'a>;
+
+    fn index(&self, key: &str) -> &Self::Output {
+        return match self.json_type {
+            JsonType::JsonObject => {
+                &self.object.map[key]
+            }
+            _ => {
+                &EMPTY_ELEMENT
+            }
+        }
     }
 }
