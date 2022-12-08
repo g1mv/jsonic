@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Neg};
+use std::ops::{AddAssign, Neg, Shl};
 
 use crate::json_element::JsonElement;
 use crate::json_elements::json_array::JsonArray;
@@ -31,19 +31,19 @@ impl<'a> JsonParser<'a> {
     }
 
     fn next_byte(&self) -> u8 {
-        return self.read_offset_byte(0);
+        return self.source[self.index];
     }
 
-    fn next_2_bytes(&self) -> usize {
-        return ((self.next_byte() as usize) << 8) + self.read_offset_byte(1) as usize;
-    }
+    // fn next_2_bytes(&self) -> usize {
+    //     return (self.next_byte() as usize).shl(8) + self.read_offset_byte(1) as usize;
+    // }
 
     fn next_3_bytes(&self) -> usize {
-        return self.next_2_bytes() << 8 + self.read_offset_byte(2);
+        return (self.next_byte() as usize).shl(16) + (self.read_offset_byte(1) as usize).shl(8) + self.read_offset_byte(2) as usize;
     }
 
     fn next_4_bytes(&self) -> usize {
-        return self.next_3_bytes() << 8 + self.read_offset_byte(3);
+        return (self.next_byte() as usize).shl(24) + (self.read_offset_byte(1) as usize).shl(16) + (self.read_offset_byte(2) as usize).shl(8) + self.read_offset_byte(3) as usize;
     }
 
     fn increment_index(&mut self) {
@@ -189,7 +189,7 @@ impl<'a> JsonParser<'a> {
                         before_dot = before_dot.neg();
                         after_dot = after_dot.neg();
                     }
-                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: exponent * (before_dot as f64 + after_dot as f64 * dot_multiplier), detected_type: JsonNumberType::JsonFloat },
+                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: exponent * (before_dot as f64 + after_dot as f64 * dot_multiplier), detected_type: JsonNumberType::JsonNumberTypeFloat },
                                                        Slice::new(self.source, mark, self.index)));
                 }
                 _ => {
@@ -197,7 +197,7 @@ impl<'a> JsonParser<'a> {
                         before_dot = before_dot.neg();
                         after_dot = after_dot.neg();
                     }
-                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: before_dot as f64 + after_dot as f64 * dot_multiplier, detected_type: if dot_multiplier != 0.0 { JsonNumberType::JsonFloat } else { JsonNumberType::JsonInteger } },
+                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: before_dot as f64 + after_dot as f64 * dot_multiplier, detected_type: if dot_multiplier != 0.0 { JsonNumberType::JsonNumberTypeFloat } else { JsonNumberType::JsonNumberTypeInteger } },
                                                        Slice::new(self.source, mark, self.index)));
                 }
             }
@@ -226,7 +226,6 @@ impl<'a> JsonParser<'a> {
     }
 
     fn parse_array(&mut self) -> Result<JsonElement<'a>, JsonError> {
-        // display_info(&format!("{}", "["));
         let mark = self.index;
         self.increment_index();
         let mut array = JsonArray::new();
@@ -264,8 +263,6 @@ impl<'a> JsonParser<'a> {
                     continue;
                 }
                 b']' => {
-                    // self.index += 1;
-                    // display_info(&format!("{}", "]"));
                     self.increment_index();
                     return Ok(JsonElement::from_array(array, Slice::new(self.source, mark, self.index)));
                 }
@@ -279,7 +276,6 @@ impl<'a> JsonParser<'a> {
     }
 
     fn parse_object(&mut self) -> Result<JsonElement<'a>, JsonError> {
-        // display_info(&format!("{}", "{"));
         let mark = self.index;
         self.increment_index();
         let mut object = JsonObject::new();
@@ -296,7 +292,6 @@ impl<'a> JsonParser<'a> {
                         }
                         b'}' => {
                             self.increment_index();
-                            // display_info(&format!("{}", "}"));
                             return Ok(JsonElement::from_object(object, Slice::new(self.source, mark, self.index)));
                         }
                         _ => {

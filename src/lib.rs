@@ -9,8 +9,8 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const CORRECT_JSON: &str = "{\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3]}";
-    const WRONG_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
+    const CORRECT_JSON: &str = "{\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false}";
+    const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
     fn parse_string() {
@@ -102,6 +102,23 @@ mod tests {
     }
 
     #[test]
+    fn parse_bool() {
+        let mut parser = JsonParser::new(CORRECT_JSON);
+
+        match parser.parse() {
+            Ok(parsed) => {
+                match parsed["bool"].as_bool() {
+                    None => { assert!(false); }
+                    Some(value) => { assert_eq!(value, false); }
+                }
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
     fn missing_key() {
         let mut parser = JsonParser::new(CORRECT_JSON);
 
@@ -133,8 +150,8 @@ mod tests {
     }
 
     #[test]
-    fn wrong_json() {
-        let mut parser = JsonParser::new(WRONG_JSON);
+    fn incorrect_json() {
+        let mut parser = JsonParser::new(INCORRECT_JSON);
 
         match parser.parse() {
             Ok(_) => {

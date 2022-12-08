@@ -1,16 +1,16 @@
 #[derive(Debug, PartialEq)]
 pub enum JsonType {
-    JsonNull,
-    JsonBoolean,
-    JsonString,
-    JsonNumber,
-    JsonObject,
-    JsonArray,
-    JsonEmpty
+    JsonTypeNull,
+    JsonTypeBoolean,
+    JsonTypeString,
+    JsonTypeNumber,
+    JsonTypeObject,
+    JsonTypeArray,
+    JsonTypeEmpty
 }
 
 #[derive(Debug, PartialEq)]
 pub enum JsonNumberType {
-    JsonFloat,
-    JsonInteger,
+    JsonNumberTypeFloat,
+    JsonNumberTypeInteger,
 }

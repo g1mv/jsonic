@@ -9,7 +9,7 @@ pub struct JsonNumber {
 
 impl JsonNumber {
     pub const fn empty() -> Self {
-        return JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonInteger };
+        return JsonNumber { num_i128: 0, num_f64: 0.0, detected_type: JsonNumberType::JsonNumberTypeInteger };
     }
 
     pub fn i128(&self) -> i128 {
