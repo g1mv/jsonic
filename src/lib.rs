@@ -9,7 +9,7 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const CORRECT_JSON: &str = " {\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":4.5e-213}  ";
+    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":4.5e-213}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]

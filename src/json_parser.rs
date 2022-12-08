@@ -242,7 +242,7 @@ impl<'a> JsonParser<'a> {
         while self.index < self.length {
             let b = self.next_byte();
             match b {
-                b' ' | b',' => {}
+                b' ' | b',' | b'\n' | b'\r' => {}
                 b'n' => {
                     array.vec.push(self.parse_null()?);
                     continue;
@@ -295,7 +295,7 @@ impl<'a> JsonParser<'a> {
             match key {
                 None => {
                     match b {
-                        b' ' | b',' => {}
+                        b' ' | b',' | b'\n' | b'\r' => {}
                         b'"' => {
                             let slice = self.parse_string()?.slice;
                             key = Some(slice.as_str().to_owned());
@@ -362,7 +362,7 @@ impl<'a> JsonParser<'a> {
         while self.index < self.length {
             let b = self.next_byte();
             match b {
-                b' ' => {}
+                b' ' | b'\n' | b'\r' => {}
                 b'{' => {
                     return Ok(self.parse_object()?);
                 }
