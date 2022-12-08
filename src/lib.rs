@@ -9,7 +9,7 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const CORRECT_JSON: &str = " {\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false}  ";
+    const CORRECT_JSON: &str = " {\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":4.5e-213}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
@@ -110,6 +110,40 @@ mod tests {
                 match parsed["bool"].as_bool() {
                     None => { assert!(false); }
                     Some(value) => { assert_eq!(value, false); }
+                }
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_exp() {
+        let mut parser = JsonParser::new(CORRECT_JSON);
+
+        match parser.parse() {
+            Ok(parsed) => {
+                match parsed["exp"].as_f64() {
+                    None => { assert!(false); }
+                    Some(value) => { assert!(f64::abs(value / 3.3e-21 - 1.0) < 1e-8); }   // floating point error
+                }
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_exp_3_digits() {
+        let mut parser = JsonParser::new(CORRECT_JSON);
+
+        match parser.parse() {
+            Ok(parsed) => {
+                match parsed["exp2"].as_f64() {
+                    None => { assert!(false); }
+                    Some(value) => { assert!(f64::abs(value / 4.5e-213 - 1.0) < 1e-8); }   // floating point error
                 }
             }
             Err(_) => {
