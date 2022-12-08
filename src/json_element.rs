@@ -141,6 +141,20 @@ impl<'a> JsonElement<'_> {
             _ => { None }
         }
     }
+
+    pub fn members(&self) -> Option<std::slice::Iter<JsonElement>> {
+        match self.json_type {
+            JsonTypeArray => { Some(self.array.as_ref().unwrap().iter()) }
+            _ => { None }
+        }
+    }
+
+    pub fn entries(&self) -> Option<std::collections::btree_map::Iter<String, JsonElement>> {
+        match self.json_type {
+            JsonTypeArray => { Some(self.object.as_ref().unwrap().iter()) }
+            _ => { None }
+        }
+    }
 }
 
 impl<'a> Index<&'a str> for JsonElement<'a> {
