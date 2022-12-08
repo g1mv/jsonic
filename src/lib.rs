@@ -14,18 +14,9 @@ mod tests {
 
     #[test]
     fn parse_string() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["test"].as_str() {
-                    None => {
-                        assert!(false);
-                    }
-                    Some(value) => {
-                        assert_eq!(value, "why not?");
-                    }
-                }
+                assert_eq!(parsed["test"].as_str(), Some("why not?"));
             }
             Err(_) => {
                 assert!(false);
@@ -35,14 +26,9 @@ mod tests {
 
     #[test]
     fn parse_float() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["num"].as_f64() {
-                    None => { assert!(false); }
-                    Some(value) => { assert_eq!(value, 4.2344); }
-                }
+                assert_eq!(parsed["num"].as_f64(), Some(4.2344));
             }
             Err(_) => {
                 assert!(false);
@@ -52,14 +38,9 @@ mod tests {
 
     #[test]
     fn parse_int() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["int"].as_i64() {
-                    None => { assert!(false); }
-                    Some(value) => { assert_eq!(value, 234); }
-                }
+                assert_eq!(parsed["int"].as_i64(), Some(234));
             }
             Err(_) => {
                 assert!(false);
@@ -69,14 +50,9 @@ mod tests {
 
     #[test]
     fn parse_obj() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["obj"]["a"].as_str() {
-                    None => { assert!(false); }
-                    Some(value) => { assert_eq!(value, "b"); }
-                }
+                assert_eq!(parsed["obj"]["a"].as_str(), Some("b"));
             }
             Err(_) => {
                 assert!(false);
@@ -86,14 +62,24 @@ mod tests {
 
     #[test]
     fn parse_array() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["arr"][1].as_i64() {
-                    None => { assert!(false); }
-                    Some(value) => { assert_eq!(value, 2); }
-                }
+                assert_eq!(parsed["arr"][1].as_i64(), Some(2));
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn traverse_array() {
+        match JsonParser::new(CORRECT_JSON).parse() {
+            Ok(parsed) => {
+                let mut iterator = parsed["arr"].elements().unwrap();
+                assert_eq!(iterator.next().unwrap().as_i64(), Some(1));
+                assert_eq!(iterator.next().unwrap().as_i64(), Some(2));
+                assert_eq!(iterator.next().unwrap().as_i64(), Some(3));
             }
             Err(_) => {
                 assert!(false);
@@ -103,14 +89,9 @@ mod tests {
 
     #[test]
     fn parse_bool() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["bool"].as_bool() {
-                    None => { assert!(false); }
-                    Some(value) => { assert_eq!(value, false); }
-                }
+                assert_eq!(parsed["bool"].as_bool(), Some(false));
             }
             Err(_) => {
                 assert!(false);
@@ -120,9 +101,7 @@ mod tests {
 
     #[test]
     fn parse_exp() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 match parsed["exp"].as_f64() {
                     None => { assert!(false); }
@@ -137,9 +116,7 @@ mod tests {
 
     #[test]
     fn parse_exp_3_digits() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 match parsed["exp2"].as_f64() {
                     None => { assert!(false); }
@@ -154,9 +131,7 @@ mod tests {
 
     #[test]
     fn missing_key() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 assert_eq!(parsed["a"].exists(), false);
             }
@@ -168,9 +143,7 @@ mod tests {
 
     #[test]
     fn missing_key_get_value() {
-        let mut parser = JsonParser::new(CORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 match parsed["a"][1].as_i64() {
                     None => { assert!(true); }
@@ -185,9 +158,7 @@ mod tests {
 
     #[test]
     fn incorrect_json() {
-        let mut parser = JsonParser::new(INCORRECT_JSON);
-
-        match parser.parse() {
+        match JsonParser::new(INCORRECT_JSON).parse() {
             Ok(_) => {
                 assert!(false);
             }
