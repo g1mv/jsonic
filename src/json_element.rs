@@ -4,7 +4,7 @@ use crate::json_elements::json_array::JsonArray;
 use crate::json_elements::json_number::JsonNumber;
 use crate::json_elements::json_object::JsonObject;
 use crate::json_types::JsonType;
-use crate::json_types::JsonType::{JsonTypeBoolean, JsonTypeEmpty, JsonTypeNull, JsonTypeNumber};
+use crate::json_types::JsonType::{JsonTypeArray, JsonTypeBoolean, JsonTypeEmpty, JsonTypeNull, JsonTypeNumber, JsonTypeObject};
 use crate::slice::Slice;
 
 static EMPTY_ELEMENT: JsonElement = JsonElement::empty();
@@ -45,7 +45,7 @@ impl<'a> JsonElement<'_> {
 
     pub fn from_boolean(boolean: bool, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
-            json_type: JsonType::JsonTypeBoolean,
+            json_type: JsonTypeBoolean,
             slice,
             boolean: Some(boolean),
             number: None,
@@ -60,7 +60,7 @@ impl<'a> JsonElement<'_> {
 
     pub fn from_number(number: JsonNumber, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
-            json_type: JsonType::JsonTypeNumber,
+            json_type: JsonTypeNumber,
             slice,
             boolean: None,
             number: Some(number),
@@ -71,7 +71,7 @@ impl<'a> JsonElement<'_> {
 
     pub fn from_object(object: JsonObject<'a>, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
-            json_type: JsonType::JsonTypeObject,
+            json_type: JsonTypeObject,
             slice,
             boolean: None,
             number: None,
@@ -82,7 +82,7 @@ impl<'a> JsonElement<'_> {
 
     pub fn from_array(array: JsonArray<'a>, slice: Slice<'a>) -> JsonElement<'a> {
         return JsonElement {
-            json_type: JsonType::JsonTypeArray,
+            json_type: JsonTypeArray,
             slice,
             boolean: None,
             number: None,
@@ -93,7 +93,7 @@ impl<'a> JsonElement<'_> {
 
     pub const fn empty() -> JsonElement<'a> {
         return JsonElement {
-            json_type: JsonType::JsonTypeEmpty,
+            json_type: JsonTypeEmpty,
             slice: Slice {
                 source: &[],
                 beginning: 0,
@@ -128,9 +128,9 @@ impl<'a> JsonElement<'_> {
         }
     }
 
-    pub fn as_i128(&self) -> Option<i128> {
+    pub fn as_i64(&self) -> Option<i64> {
         match self.json_type {
-            JsonTypeNumber => { Some(self.number.as_ref().unwrap().i128()) }
+            JsonTypeNumber => { Some(self.number.as_ref().unwrap().i64()) }
             _ => { None }
         }
     }

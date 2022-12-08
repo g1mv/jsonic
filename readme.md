@@ -1,4 +1,4 @@
-# JSONic
+# jsonic
 
 * Fast, small JSON parsing library for rust with no dependencies.
 

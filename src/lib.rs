@@ -9,7 +9,7 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const CORRECT_JSON: &str = "{\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false}";
+    const CORRECT_JSON: &str = " {\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
@@ -56,7 +56,7 @@ mod tests {
 
         match parser.parse() {
             Ok(parsed) => {
-                match parsed["int"].as_i128() {
+                match parsed["int"].as_i64() {
                     None => { assert!(false); }
                     Some(value) => { assert_eq!(value, 234); }
                 }
@@ -90,7 +90,7 @@ mod tests {
 
         match parser.parse() {
             Ok(parsed) => {
-                match parsed["arr"][1].as_i128() {
+                match parsed["arr"][1].as_i64() {
                     None => { assert!(false); }
                     Some(value) => { assert_eq!(value, 2); }
                 }
@@ -138,7 +138,7 @@ mod tests {
 
         match parser.parse() {
             Ok(parsed) => {
-                match parsed["a"][1].as_i128() {
+                match parsed["a"][1].as_i64() {
                     None => { assert!(true); }
                     Some(_) => { assert!(false); }
                 }
