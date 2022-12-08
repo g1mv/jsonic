@@ -142,7 +142,7 @@ impl<'a> JsonElement<'_> {
         }
     }
 
-    pub fn members(&self) -> Option<std::slice::Iter<JsonElement>> {
+    pub fn elements(&self) -> Option<std::slice::Iter<JsonElement>> {
         match self.json_type {
             JsonTypeArray => { Some(self.array.as_ref().unwrap().iter()) }
             _ => { None }
