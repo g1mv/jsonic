@@ -1,9 +1,10 @@
 [package]
 name = "jsonic"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Fast, small JSON parsing library for rust with no dependencies"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/k0dai/jsonic"
 
 [profile.release]
 opt-level = 3
