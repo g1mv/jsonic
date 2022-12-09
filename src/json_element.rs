@@ -151,7 +151,7 @@ impl<'a> JsonElement<'_> {
 
     pub fn entries(&self) -> Option<std::collections::btree_map::Iter<String, JsonElement>> {
         match self.json_type {
-            JsonTypeArray => { Some(self.object.as_ref().unwrap().iter()) }
+            JsonTypeObject => { Some(self.object.as_ref().unwrap().iter()) }
             _ => { None }
         }
     }
@@ -162,7 +162,7 @@ impl<'a> Index<&'a str> for JsonElement<'a> {
 
     fn index(&self, key: &str) -> &Self::Output {
         return match self.json_type {
-            JsonType::JsonTypeObject => {
+            JsonTypeObject => {
                 return self.object.as_ref().unwrap().map.get(key).unwrap_or(&EMPTY_ELEMENT);
             }
             _ => {
@@ -177,7 +177,7 @@ impl<'a> Index<usize> for JsonElement<'a> {
 
     fn index(&self, index: usize) -> &Self::Output {
         return match self.json_type {
-            JsonType::JsonTypeArray => {
+            JsonTypeArray => {
                 return self.array.as_ref().unwrap().vec.get(index).unwrap_or(&EMPTY_ELEMENT);
             }
             _ => {
