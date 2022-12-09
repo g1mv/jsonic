@@ -128,8 +128,8 @@ impl<'a> JsonParser<'a> {
         return Err(JsonError::new(self.source, self.index));
     }
 
-    fn parse_digits(&mut self) -> Result<i64, JsonError> {
-        let mut number = 0_i64;
+    fn parse_digits(&mut self) -> Result<i128, JsonError> {
+        let mut number = 0_i128;
         // while self.index + 3 < self.length {
         //     let next_4 = self.next_4_bytes();
         //     if count_between(next_4, b'0' as u64, b'9' as u64) == 4 {
@@ -149,12 +149,12 @@ impl<'a> JsonParser<'a> {
             let b = self.next_byte();
             match b {
                 b'0'..=b'9' => {
-                    match number.overflowing_mul(10_i64) {
+                    match number.overflowing_mul(10_i128) {
                         (_, true) => {
                             return Err(JsonError::new(self.source, self.index));
                         }
                         (result, false) => {
-                            number = result + (b - b'0') as i64;
+                            number = result + (b - b'0') as i128;
                         }
                     }
                 }
@@ -169,7 +169,7 @@ impl<'a> JsonParser<'a> {
 
     fn parse_number(&mut self) -> Result<JsonElement<'a>, JsonError> {
         let mark = self.index;
-        let mut after_dot = 0_i64;
+        let mut after_dot = 0_i128;
         let mut dot_multiplier = 0.0_f64;
         let mut neg = false;
 
@@ -199,7 +199,7 @@ impl<'a> JsonParser<'a> {
                         before_dot = before_dot.neg();
                         after_dot = after_dot.neg();
                     }
-                    return Ok(JsonElement::from_number(JsonNumber { num_i64: before_dot, num_f64: exponent * (before_dot as f64 + after_dot as f64 * dot_multiplier), detected_type: JsonNumberType::JsonNumberTypeFloat },
+                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: exponent * (before_dot as f64 + after_dot as f64 * dot_multiplier), detected_type: JsonNumberType::JsonNumberTypeFloat },
                                                        Slice::new(self.source, mark, self.index)));
                 }
                 _ => {
@@ -207,7 +207,7 @@ impl<'a> JsonParser<'a> {
                         before_dot = before_dot.neg();
                         after_dot = after_dot.neg();
                     }
-                    return Ok(JsonElement::from_number(JsonNumber { num_i64: before_dot, num_f64: before_dot as f64 + after_dot as f64 * dot_multiplier, detected_type: if dot_multiplier != 0.0 { JsonNumberType::JsonNumberTypeFloat } else { JsonNumberType::JsonNumberTypeInteger } },
+                    return Ok(JsonElement::from_number(JsonNumber { num_i128: before_dot, num_f64: before_dot as f64 + after_dot as f64 * dot_multiplier, detected_type: if dot_multiplier != 0.0 { JsonNumberType::JsonNumberTypeFloat } else { JsonNumberType::JsonNumberTypeInteger } },
                                                        Slice::new(self.source, mark, self.index)));
                 }
             }

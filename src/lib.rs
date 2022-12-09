@@ -40,7 +40,7 @@ mod tests {
     fn parse_int() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                assert_eq!(parsed["int"].as_i64(), Some(234));
+                assert_eq!(parsed["int"].as_i128(), Some(234));
             }
             Err(_) => {
                 assert!(false);
@@ -64,7 +64,7 @@ mod tests {
     fn parse_array() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                assert_eq!(parsed["arr"][1].as_i64(), Some(2));
+                assert_eq!(parsed["arr"][1].as_i128(), Some(2));
             }
             Err(_) => {
                 assert!(false);
@@ -77,9 +77,9 @@ mod tests {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 let mut iterator = parsed["arr"].elements().unwrap();
-                assert_eq!(iterator.next().unwrap().as_i64(), Some(1));
-                assert_eq!(iterator.next().unwrap().as_i64(), Some(2));
-                assert_eq!(iterator.next().unwrap().as_i64(), Some(3));
+                assert_eq!(iterator.next().unwrap().as_i128(), Some(1));
+                assert_eq!(iterator.next().unwrap().as_i128(), Some(2));
+                assert_eq!(iterator.next().unwrap().as_i128(), Some(3));
             }
             Err(_) => {
                 assert!(false);
@@ -145,7 +145,7 @@ mod tests {
     fn missing_key_get_value() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                match parsed["a"][1].as_i64() {
+                match parsed["a"][1].as_i128() {
                     None => { assert!(true); }
                     Some(_) => { assert!(false); }
                 }

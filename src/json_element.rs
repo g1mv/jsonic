@@ -128,9 +128,9 @@ impl<'a> JsonElement<'_> {
         }
     }
 
-    pub fn as_i64(&self) -> Option<i64> {
+    pub fn as_i128(&self) -> Option<i128> {
         match self.json_type {
-            JsonTypeNumber => { Some(self.number.as_ref().unwrap().i64()) }
+            JsonTypeNumber => { Some(self.number.as_ref().unwrap().i128()) }
             _ => { None }
         }
     }
