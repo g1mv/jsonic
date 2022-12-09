@@ -9,7 +9,7 @@ pub mod slice;
 mod tests {
     use crate::json_parser::JsonParser;
 
-    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\"  , \"num\":4.2344, \"int\":234,  \"obj\":{\"a\":\"b\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":4.5e-213}  ";
+    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"another\":  \"hey#çà@â&éè\" \r ,\"obj2\":{\"k\":{\"k2\":\"v\"}} \"num\":4.2344, \"int\":-234,  \"obj\":{\"a\":\"b\", \"c\":\"d\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":-4.5e-213,\"depth\":[\"a\",[\"b\",\"c\"]]}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
@@ -40,7 +40,7 @@ mod tests {
     fn parse_int() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
-                assert_eq!(parsed["int"].as_i128(), Some(234));
+                assert_eq!(parsed["int"].as_i128(), Some(-234));
             }
             Err(_) => {
                 assert!(false);
@@ -49,10 +49,40 @@ mod tests {
     }
 
     #[test]
-    fn parse_obj() {
+    fn parse_object() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 assert_eq!(parsed["obj"]["a"].as_str(), Some("b"));
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_object_depth() {
+        match JsonParser::new(CORRECT_JSON).parse() {
+            Ok(parsed) => {
+                assert_eq!(parsed["obj2"]["k"]["k2"].as_str(), Some("v"));
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn traverse_object() {
+        match JsonParser::new(CORRECT_JSON).parse() {
+            Ok(parsed) => {
+                let mut iterator = parsed["obj"].entries().unwrap();
+                let a = iterator.next().unwrap();
+                assert_eq!(a.0, "a");
+                assert_eq!(a.1.as_str(), Some("b"));
+                let b = iterator.next().unwrap();
+                assert_eq!(b.0, "c");
+                assert_eq!(b.1.as_str(), Some("d"));
             }
             Err(_) => {
                 assert!(false);
@@ -65,6 +95,18 @@ mod tests {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
                 assert_eq!(parsed["arr"][1].as_i128(), Some(2));
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_array_depth() {
+        match JsonParser::new(CORRECT_JSON).parse() {
+            Ok(parsed) => {
+                assert_eq!(parsed["depth"][1][1].as_str(), Some("c"));
             }
             Err(_) => {
                 assert!(false);
@@ -120,7 +162,7 @@ mod tests {
             Ok(parsed) => {
                 match parsed["exp2"].as_f64() {
                     None => { assert!(false); }
-                    Some(value) => { assert!(f64::abs(value / 4.5e-213 - 1.0) < 1e-8); }   // floating point error
+                    Some(value) => { assert!(f64::abs(value / -4.5e-213 - 1.0) < 1e-8); }   // floating point error
                 }
             }
             Err(_) => {
