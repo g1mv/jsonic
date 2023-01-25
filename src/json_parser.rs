@@ -116,11 +116,11 @@ impl<'a> JsonParser<'a> {
                 //     return Ok(10.0_f64.powi(sign * number));
                 // }
                 _ => {
-                    if number < EXP_MATRIX[0].len() as i32 {
-                        return Ok(EXP_MATRIX[if sign == 1 { 0_usize } else { 1_usize }][number as usize]);
+                    return if number < EXP_MATRIX[0].len() as i32 {
+                        Ok(EXP_MATRIX[if sign == 1 { 0_usize } else { 1_usize }][number as usize])
                     } else {
-                        return Ok(10.0_f64.powi(sign * number));
-                    }
+                        Ok(10.0_f64.powi(sign * number))
+                    };
                 }
             }
             self.increment_index();
@@ -218,15 +218,16 @@ impl<'a> JsonParser<'a> {
     fn parse_string(&mut self) -> Result<JsonElement<'a>, JsonError> {
         self.increment_index();
         let mark = self.index;
-        // while self.index + 3 < self.length && has_value(unsafe { self.next_4_bytes() }, b'"' as u64) == 0 {
-        //     self.index += 4;
-        // }
+        let mut b = 0;
         while self.index < self.length {
-            let b = self.next_byte();
+            let p = b;
+            b = self.next_byte();
             match b {
-                b'"' => {   // '"'
-                    self.increment_index();
-                    return Ok(JsonElement::from_string(Slice::new(self.source, mark, self.index - 1)));
+                b'"' => {
+                    if p != b'\\' {
+                        self.increment_index();
+                        return Ok(JsonElement::from_string(Slice::new(self.source, mark, self.index - 1)));
+                    }
                 }
                 _ => {}
             }
