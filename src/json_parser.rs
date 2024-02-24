@@ -99,6 +99,7 @@ impl<'a> JsonParser<'a> {
         while self.index < self.length {
             let b = self.next_byte();
             match b {
+                b'+' => {}
                 b'-' => {
                     sign = -1_i32;
                 }
