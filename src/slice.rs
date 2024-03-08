@@ -15,7 +15,7 @@ impl<'a> Slice<'_> {
     }
 
     pub fn as_str(&self) -> &str {
-        // Source bytes are extracted from an UTF-8 &str initially
+        // Source bytes are extracted from a UTF-8 &str initially
         unsafe { std::str::from_utf8_unchecked(&self.source[self.beginning..self.end]) }
     }
 }

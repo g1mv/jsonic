@@ -1,3 +1,4 @@
+use std::collections::btree_map::Iter;
 use std::ops::Index;
 
 use crate::json_elements::json_array::JsonArray;
@@ -40,7 +41,7 @@ impl<'a> JsonElement<'_> {
     }
 
     pub fn from_null(slice: Slice<'a>) -> JsonElement<'a> {
-        return JsonElement::from_type_slice(JsonType::JsonTypeNull, slice);
+        return JsonElement::from_type_slice(JsonTypeNull, slice);
     }
 
     pub fn from_boolean(boolean: bool, slice: Slice<'a>) -> JsonElement<'a> {
@@ -149,7 +150,7 @@ impl<'a> JsonElement<'_> {
         }
     }
 
-    pub fn entries(&self) -> Option<std::collections::btree_map::Iter<String, JsonElement>> {
+    pub fn entries(&self) -> Option<Iter<String, JsonElement>> {
         match self.json_type {
             JsonTypeObject => { Some(self.object.as_ref().unwrap().iter()) }
             _ => { None }

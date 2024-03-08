@@ -1,4 +1,5 @@
 use std::ops::Index;
+use std::slice::Iter;
 use crate::json_element::JsonElement;
 
 #[derive(Debug)]
@@ -13,7 +14,7 @@ impl JsonArray<'_> {
         };
     }
 
-    pub fn iter(&self) -> std::slice::Iter<'_, JsonElement> {
+    pub fn iter(&self) -> Iter<JsonElement> {
         return self.vec.iter();
     }
 }

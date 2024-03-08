@@ -1,3 +1,4 @@
+use std::collections::btree_map::Iter;
 use std::collections::BTreeMap;
 use std::ops::Index;
 
@@ -19,7 +20,7 @@ impl JsonObject<'_> {
         return self.map.get(key);
     }
 
-    pub fn iter(&self) -> std::collections::btree_map::Iter<'_, String, JsonElement> {
+    pub fn iter(&self) -> Iter<String, JsonElement> {
         return self.map.iter();
     }
 }
