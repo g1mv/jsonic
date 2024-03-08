@@ -13,6 +13,30 @@ mod tests {
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
+    fn parse_correct() {
+        match JsonParser::new(CORRECT_JSON).parse() {
+            Ok(_) => {
+                assert!(true);
+            }
+            Err(_) => {
+                assert!(false);
+            }
+        }
+    }
+
+    #[test]
+    fn parse_incorrect() {
+        match JsonParser::new(INCORRECT_JSON).parse() {
+            Ok(_) => {
+                assert!(false);
+            }
+            Err(_) => {
+                assert!(true);
+            }
+        }
+    }
+
+    #[test]
     fn parse_string() {
         match JsonParser::new(CORRECT_JSON).parse() {
             Ok(parsed) => {
@@ -194,18 +218,6 @@ mod tests {
             }
             Err(_) => {
                 assert!(false);
-            }
-        }
-    }
-
-    #[test]
-    fn incorrect_json() {
-        match JsonParser::new(INCORRECT_JSON).parse() {
-            Ok(_) => {
-                assert!(false);
-            }
-            Err(_) => {
-                assert!(true);
             }
         }
     }
