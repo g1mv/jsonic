@@ -8,13 +8,12 @@ pub struct JsonError {
 }
 
 impl JsonError {
-    pub fn new(source: &[u8], index: usize) -> Self {
-        let text = unsafe { String::from_utf8_unchecked(source.to_vec()) };
-        let extract = unsafe { String::from_utf8_unchecked(source[isize::max(0, index as isize - 8) as usize..usize::min(source.len(), index + 8)].to_vec()) };
+    pub fn new(source: &str, index: usize) -> Self {
+        let extract = &source[isize::max(0, index as isize - 8) as usize..usize::min(source.len(), index + 8)];
         return JsonError {
             index,
-            extract,
-            text,
+            extract: extract.to_owned(),
+            text: source.to_owned(),
         };
     }
 }

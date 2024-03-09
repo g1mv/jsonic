@@ -2,23 +2,15 @@ use std::fs::read_to_string;
 
 use divan::Bencher;
 
-use jsonic::json_parser::JsonParser;
-
 fn main() {
     divan::main();
 }
 
 fn parse_file(bencher: Bencher, path: &str) {
-    let in_memory_json = match read_to_string(path) {
-        Ok(text) => { text }
-        Err(_) => { return; }
-    };
+    let in_memory_json = read_to_string(path).unwrap();
 
     bencher.bench_local(move || {
-        match JsonParser::new(&in_memory_json).parse() {
-            Ok(_) => {}
-            Err(_) => {}
-        }
+        let _ = jsonic::parse(&in_memory_json);
     });
 }
 

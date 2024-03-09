@@ -7,16 +7,10 @@ fn main() {
 }
 
 fn parse_file(bencher: Bencher, path: &str) {
-    let in_memory_json = match read_to_string(path) {
-        Ok(text) => { text }
-        Err(_) => { return; }
-    };
+    let in_memory_json = read_to_string(path).unwrap();
 
     bencher.bench_local(move || {
-        match json::parse(&in_memory_json) {
-            Ok(_) => {}
-            Err(_) => {}
-        }
+        json::parse(&in_memory_json)
     });
 }
 
