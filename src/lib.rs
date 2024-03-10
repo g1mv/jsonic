@@ -25,145 +25,137 @@ fn update_index(item: &JsonItem) -> usize {
 }
 
 #[inline(always)]
-fn skip_spaces(source: &str, mut index: usize) -> Result<usize, JsonError> {
-    let bytes = source.as_bytes();
-    while index < source.len() {
+fn skip_spaces(bytes: &[u8], mut index: usize) -> Result<usize, JsonError> {
+    while index < bytes.len() {
         match bytes[index] {
             b' ' | b'\n' | b'\r' | b'\t' => {}
             _ => { return Ok(index); }
         }
         index += 1;
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_null(source: &str, index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
-    if index + 3 < source.len() {
+fn parse_null(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
+    if index + 3 < bytes.len() {
         if bytes[index + 1] == b'u' && bytes[index + 2] == b'l' && bytes[index + 3] == b'l' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 4), JsonNull));
+            return Ok(JsonItem::new(Slice::new(bytes, index, index + 4), JsonNull));
         }
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_true(source: &str, index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
-    if index + 3 < source.len() {
+fn parse_true(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
+    if index + 3 < bytes.len() {
         if bytes[index + 1] == b'r' && bytes[index + 2] == b'u' && bytes[index + 3] == b'e' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 4), JsonTrue));
+            return Ok(JsonItem::new(Slice::new(bytes, index, index + 4), JsonTrue));
         }
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_false(source: &str, index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
-    if index + 4 < source.len() {
+fn parse_false(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
+    if index + 4 < bytes.len() {
         if bytes[index + 1] == b'a' && bytes[index + 2] == b'l' && bytes[index + 3] == b's' && bytes[index + 4] == b'e' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 5), JsonFalse));
+            return Ok(JsonItem::new(Slice::new(bytes, index, index + 5), JsonFalse));
         }
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_number(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
+fn parse_number(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
     let mark = index;
     index += 1;
-    while index < source.len() {
+    while index < bytes.len() {
         match bytes[index] {
             b'0'..=b'9' | b'+' | b'-' | b'.' | b'e' | b'E' => {}
             _ => {
-                return Ok(JsonItem::new(Slice::new(source, mark, index), JsonNumber));
+                return Ok(JsonItem::new(Slice::new(bytes, mark, index), JsonNumber));
             }
         }
         index += 1;
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_string(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
+fn parse_string(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
     index += 1;
     let mark = index;
     let mut b = 0;
-    while index < source.len() {
+    while index < bytes.len() {
         let p = b;
         b = bytes[index];
         if b == b'"' {
             if p != b'\\' {
-                return Ok(JsonItem::new(Slice::new(source, mark, index), JsonString));
+                return Ok(JsonItem::new(Slice::new(bytes, mark, index), JsonString));
             }
         }
         index += 1;
     }
-    Err(JsonError::new(source, index))
+    Err(JsonError::new(bytes, index))
 }
 
 #[inline(always)]
-fn parse_unknown(source: &str, index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
+fn parse_unknown(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
     return match bytes[index] {
-        b'n' => { Ok(parse_null(source, index)?) }
-        b't' => { Ok(parse_true(source, index)?) }
-        b'f' => { Ok(parse_false(source, index)?) }
-        b'+' | b'-' | b'0'..=b'9' => { Ok(parse_number(source, index)?) }
-        b'"' => { Ok(parse_string(source, index)?) }
-        b'{' => { Ok(parse_map(source, index)?) }
-        b'[' => { Ok(parse_array(source, index)?) }
+        b'n' => { Ok(parse_null(bytes, index)?) }
+        b't' => { Ok(parse_true(bytes, index)?) }
+        b'f' => { Ok(parse_false(bytes, index)?) }
+        b'+' | b'-' | b'0'..=b'9' => { Ok(parse_number(bytes, index)?) }
+        b'"' => { Ok(parse_string(bytes, index)?) }
+        b'{' => { Ok(parse_map(bytes, index)?) }
+        b'[' => { Ok(parse_array(bytes, index)?) }
         _ => {
-            Err(JsonError::new(source, index))
+            Err(JsonError::new(bytes, index))
         }
     };
 }
 
 #[inline(always)]
-fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
+fn parse_map(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
     let mark = index;
     index += 1;
     let mut map = None;
     loop {
         // Spaces
-        index = skip_spaces(source, index)?;
+        index = skip_spaces(bytes, index)?;
 
         // Check ending
         match bytes[index] {
             b'}' => {
-                return Ok(JsonItem::new_map(Slice::new(source, mark, index + 1), map));
+                return Ok(JsonItem::new_map(Slice::new(bytes, mark, index + 1), map));
             }
             b',' => {
                 index += 1;
-                index = skip_spaces(source, index)?;
+                index = skip_spaces(bytes, index)?;
             }
             _ => {
                 if !map.is_none() {
-                    return Err(JsonError::new(source, index));
+                    return Err(JsonError::new(bytes, index));
                 }
             }
         }
 
         // Key
-        let key = parse_string(source, index)?;
+        let key = parse_string(bytes, index)?;
         index = update_index(&key);
 
         // Separator
-        index = skip_spaces(source, index)?;
+        index = skip_spaces(bytes, index)?;
         if bytes[index] != b':' {
-            return Err(JsonError::new(source, index));
+            return Err(JsonError::new(bytes, index));
         } else {
             index += 1;
-            index = skip_spaces(source, index)?;
+            index = skip_spaces(bytes, index)?;
         }
 
         // Value
-        let item = parse_unknown(source, index)?;
+        let item = parse_unknown(bytes, index)?;
         index = update_index(&item);
 
         // Store
@@ -178,33 +170,32 @@ fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
 }
 
 #[inline(always)]
-fn parse_array(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
-    let bytes = source.as_bytes();
+fn parse_array(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
     let mark = index;
     let mut array = None;
     index += 1;
     loop {
         // Spaces
-        index = skip_spaces(source, index)?;
+        index = skip_spaces(bytes, index)?;
 
         // Check ending
         match bytes[index] {
             b']' => {
-                return Ok(JsonItem::new_array(Slice::new(source, mark, index + 1), array));
+                return Ok(JsonItem::new_array(Slice::new(bytes, mark, index + 1), array));
             }
             b',' => {
                 index += 1;
-                index = skip_spaces(source, index)?;
+                index = skip_spaces(bytes, index)?;
             }
             _ => {
                 if !array.is_none() {
-                    return Err(JsonError::new(source, index));
+                    return Err(JsonError::new(bytes, index));
                 }
             }
         }
 
         // Item
-        let item = parse_unknown(source, index)?;
+        let item = parse_unknown(bytes, index)?;
         index = update_index(&item);
 
         // Store
@@ -221,11 +212,11 @@ fn parse_array(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
 pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mut index = 0_usize;
-    index = skip_spaces(source, index)?;
+    index = skip_spaces(bytes, index)?;
     return match bytes[index] {
-        b'{' => { parse_map(source, index) }
-        b'[' => { parse_array(source, index) }
-        _ => { Err(JsonError::new(source, index)) }
+        b'{' => { parse_map(bytes, index) }
+        b'[' => { parse_array(bytes, index) }
+        _ => { Err(JsonError::new(bytes, index)) }
     };
 }
 
