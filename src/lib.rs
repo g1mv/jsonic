@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::json_error::JsonError;
 use crate::json_item::JsonItem;
-use crate::json_type::JsonType::{False, Null, Number, String, True};
+use crate::json_type::JsonType::{JsonFalse, JsonNull, JsonNumber, JsonString, JsonTrue};
 use crate::slice::Slice;
 
 pub mod json_error;
@@ -15,7 +15,7 @@ fn parse_null(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 3 < source.len() {
         if bytes[index + 1] == b'u' && bytes[index + 2] == b'l' && bytes[index + 3] == b'l' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 4), Null));
+            return Ok(JsonItem::new(Slice::new(source, index, index + 4), JsonNull));
         }
     }
     Err(JsonError::new(source, index))
@@ -25,7 +25,7 @@ fn parse_true(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 3 < source.len() {
         if bytes[index + 1] == b'r' && bytes[index + 2] == b'u' && bytes[index + 3] == b'e' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 4), True));
+            return Ok(JsonItem::new(Slice::new(source, index, index + 4), JsonTrue));
         }
     }
     Err(JsonError::new(source, index))
@@ -35,7 +35,7 @@ fn parse_false(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 4 < source.len() {
         if bytes[index + 1] == b'a' && bytes[index + 2] == b'l' && bytes[index + 3] == b's' && bytes[index + 4] == b'e' {
-            return Ok(JsonItem::new(Slice::new(source, index, index + 5), False));
+            return Ok(JsonItem::new(Slice::new(source, index, index + 5), JsonFalse));
         }
     }
     Err(JsonError::new(source, index))
@@ -50,7 +50,7 @@ fn parse_number(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
         match b {
             b'0'..=b'9' | b'+' | b'-' | b'.' | b'e' | b'E' => {}
             _ => {
-                return Ok(JsonItem::new(Slice::new(source, mark, index), Number));
+                return Ok(JsonItem::new(Slice::new(source, mark, index), JsonNumber));
             }
         }
         index += 1;
@@ -68,7 +68,7 @@ fn parse_string(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
         b = bytes[index];
         if b == b'"' {
             if p != b'\\' {
-                return Ok(JsonItem::new(Slice::new(source, mark, index), String));
+                return Ok(JsonItem::new(Slice::new(source, mark, index), JsonString));
             }
         }
         index += 1;
@@ -76,11 +76,23 @@ fn parse_string(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
+
+#[inline(always)]
+fn push_to_map<'a>(key: String, item: JsonItem<'a>, map: Option<BTreeMap<String, JsonItem<'a>>>) -> BTreeMap<String, JsonItem<'a>> {
+    let mut map = if let Some(map) = map {
+        map
+    } else {
+        BTreeMap::new()
+    };
+    map.insert(key, item);
+    map
+}
+
 fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mark = index;
     index += 1;
-    let mut map = BTreeMap::new();
+    let mut map = None;
     let mut key = None;
     'main: loop {
         return if let Some(k) = key {
@@ -91,49 +103,49 @@ fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
                     b'n' => {
                         let json_null = parse_null(source, index)?;
                         index = json_null.slice.end;
-                        map.insert(k, json_null);
+                        map = Some(push_to_map(k, json_null, map));
                         key = None;
                         continue 'main;
                     }
                     b't' => {
                         let json_true = parse_true(source, index)?;
                         index = json_true.slice.end;
-                        map.insert(k, json_true);
+                        map = Some(push_to_map(k, json_true, map));
                         key = None;
                         continue 'main;
                     }
                     b'f' => {
                         let json_false = parse_false(source, index)?;
                         index = json_false.slice.end;
-                        map.insert(k, json_false);
+                        map = Some(push_to_map(k, json_false, map));
                         key = None;
                         continue 'main;
                     }
                     b'+' | b'-' | b'0'..=b'9' => {
                         let json_number = parse_number(source, index)?;
                         index = json_number.slice.end;
-                        map.insert(k, json_number);
+                        map = Some(push_to_map(k, json_number, map));
                         key = None;
                         continue 'main;
                     }
                     b'"' => {
                         let json_string = parse_string(source, index)?;
                         index = json_string.slice.end + 1;
-                        map.insert(k, json_string);
+                        map = Some(push_to_map(k, json_string, map));
                         key = None;
                         continue 'main;
                     }
                     b'{' => {
                         let json_map = parse_map(source, index)?;
                         index = json_map.slice.end;
-                        map.insert(k, json_map);
+                        map = Some(push_to_map(k, json_map, map));
                         key = None;
                         continue 'main;
                     }
                     b'[' => {
                         let json_array = parse_array(source, index)?;
                         index = json_array.slice.end;
-                        map.insert(k, json_array);
+                        map = Some(push_to_map(k, json_array, map));
                         key = None;
                         continue 'main;
                     }
@@ -169,10 +181,22 @@ fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     }
 }
 
+
+#[inline(always)]
+fn push_to_array<'a>(item: JsonItem<'a>, array: Option<Vec<JsonItem<'a>>>) -> Vec<JsonItem<'a>> {
+    let mut array = if let Some(array) = array {
+        array
+    } else {
+        Vec::with_capacity(2)
+    };
+    array.push(item);
+    array
+}
+
 fn parse_array(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mark = index;
-    let mut array = Vec::new();
+    let mut array = None;
     index += 1;
     while index < source.len() {
         let b = bytes[index];
@@ -181,43 +205,43 @@ fn parse_array(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
             b'n' => {
                 let json_null = parse_null(source, index)?;
                 index = json_null.slice.end;
-                array.push(json_null);
+                array = Some(push_to_array(json_null, array));
                 continue;
             }
             b't' => {
                 let json_true = parse_true(source, index)?;
                 index = json_true.slice.end;
-                array.push(json_true);
+                array = Some(push_to_array(json_true, array));
                 continue;
             }
             b'f' => {
                 let json_false = parse_false(source, index)?;
                 index = json_false.slice.end;
-                array.push(json_false);
+                array = Some(push_to_array(json_false, array));
                 continue;
             }
             b'+' | b'-' | b'0'..=b'9' => {
                 let json_number = parse_number(source, index)?;
                 index = json_number.slice.end;
-                array.push(json_number);
+                array = Some(push_to_array(json_number, array));
                 continue;
             }
             b'"' => {
                 let json_string = parse_string(source, index)?;
                 index = json_string.slice.end + 1;
-                array.push(json_string);
+                array = Some(push_to_array(json_string, array));
                 continue;
             }
             b'{' => {
                 let json_map = parse_map(source, index)?;
                 index = json_map.slice.end;
-                array.push(json_map);
+                array = Some(push_to_array(json_map, array));
                 continue;
             }
             b'[' => {
                 let json_array = parse_array(source, index)?;
                 index = json_array.slice.end;
-                array.push(json_array);
+                array = Some(push_to_array(json_array, array));
                 continue;
             }
             b']' => {
