@@ -3,30 +3,30 @@ use std::ops::Index;
 use std::slice::Iter;
 
 use crate::json_type::JsonType;
-use crate::json_type::JsonType::{JsonArray, Void, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue, JsonEmptyArray, JsonEmptyMap};
+use crate::json_type::JsonType::{JsonArray, JsonEmptyArray, JsonEmptyMap, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue, Void};
 use crate::key::Key;
 use crate::slice::Slice;
 
 static EMPTY_ITEM: JsonItem = JsonItem::empty();
 
 #[derive(Debug)]
-pub struct JsonItem<'a> {
-    pub slice: Slice<'a>,
+pub struct JsonItem {
+    pub slice: Slice,
     pub json_type: JsonType,
-    pub array: Option<Vec<JsonItem<'a>>>,
-    pub map: Option<BTreeMap<Key, JsonItem<'a>>>,
+    pub array: Option<Vec<JsonItem>>,
+    pub map: Option<BTreeMap<Key, JsonItem>>,
 }
 
-impl<'a> JsonItem<'a> {
-    pub fn new(slice: Slice<'a>, json_type: JsonType) -> Self {
+impl JsonItem {
+    pub fn new(slice: Slice, json_type: JsonType) -> Self {
         JsonItem { slice, json_type, array: None, map: None }
     }
 
-    pub fn new_array(slice: Slice<'a>, array: Option<Vec<JsonItem<'a>>>) -> Self {
+    pub fn new_array(slice: Slice, array: Option<Vec<JsonItem>>) -> Self {
         JsonItem { slice, json_type: if array.is_some() { JsonArray } else { JsonEmptyArray }, array, map: None }
     }
 
-    pub fn new_map(slice: Slice<'a>, map: Option<BTreeMap<Key, JsonItem<'a>>>) -> Self {
+    pub fn new_map(slice: Slice, map: Option<BTreeMap<Key, JsonItem>>) -> Self {
         JsonItem { slice, json_type: if map.is_some() { JsonMap } else { JsonEmptyMap }, array: None, map }
     }
 
@@ -34,11 +34,15 @@ impl<'a> JsonItem<'a> {
         JsonItem { slice: Slice::empty(), json_type: Void, array: None, map: None }
     }
 
-    pub fn as_str(&'a self) -> Option<&'a str> {
-        self.slice.as_str()
+    pub fn as_str(&self) -> Option<&str> {
+        if self.json_type == Void {
+            None
+        } else {
+            Some(self.slice.as_str())
+        }
     }
 
-    pub fn as_f64(&'a self) -> Option<f64> {
+    pub fn as_f64(&self) -> Option<f64> {
         if self.json_type != JsonNumber {
             None
         } else {
@@ -46,7 +50,7 @@ impl<'a> JsonItem<'a> {
         }
     }
 
-    pub fn as_i128(&'a self) -> Option<i128> {
+    pub fn as_i128(&self) -> Option<i128> {
         if self.json_type != JsonNumber {
             None
         } else {
@@ -54,7 +58,7 @@ impl<'a> JsonItem<'a> {
         }
     }
 
-    pub fn as_bool(&'a self) -> Option<bool> {
+    pub fn as_bool(&self) -> Option<bool> {
         match self.json_type {
             JsonTrue => { Some(true) }
             JsonFalse => { Some(false) }
@@ -62,7 +66,7 @@ impl<'a> JsonItem<'a> {
         }
     }
 
-    pub fn is_null(&'a self) -> bool {
+    pub fn is_null(&self) -> bool {
         self.json_type == JsonNull
     }
 
@@ -89,21 +93,21 @@ impl<'a> JsonItem<'a> {
     }
 }
 
-impl<'a> Index<&'a str> for JsonItem<'a> {
-    type Output = JsonItem<'a>;
+impl Index<&str> for JsonItem {
+    type Output = JsonItem;
 
-    fn index(&self, key: &'a str) -> &Self::Output {
+    fn index(&self, key: &str) -> &Self::Output {
         if self.json_type == JsonMap {
             if let Some(map) = &self.map {
-                return map.get(&Key::from(key.to_owned())).unwrap_or(&EMPTY_ITEM);
+                return map.get(&Key::from(Slice::from_str(key))).unwrap_or(&EMPTY_ITEM);
             }
         }
         &EMPTY_ITEM
     }
 }
 
-impl<'a> Index<usize> for JsonItem<'a> {
-    type Output = JsonItem<'a>;
+impl Index<usize> for JsonItem {
+    type Output = JsonItem;
 
     fn index(&self, index: usize) -> &Self::Output {
         if self.json_type == JsonArray {
