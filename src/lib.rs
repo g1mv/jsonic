@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use crate::json_error::JsonError;
 use crate::json_item::JsonItem;
 use crate::json_type::JsonType::{JsonFalse, JsonNull, JsonNumber, JsonString, JsonTrue};
+use crate::key::Key;
 use crate::slice::Slice;
 
 pub mod json_error;
@@ -10,7 +11,33 @@ pub mod slice;
 pub mod json_item;
 
 pub mod json_type;
+pub mod key;
 
+const DEFAULT_VEC_CAPACITY: usize = 2;
+
+#[inline(always)]
+fn update_index(item: &JsonItem) -> usize {
+    if item.json_type == JsonString {
+        item.slice.end + 1
+    } else {
+        item.slice.end
+    }
+}
+
+#[inline(always)]
+fn skip_spaces(source: &str, mut index: usize) -> Result<usize, JsonError> {
+    let bytes = source.as_bytes();
+    while index < source.len() {
+        match bytes[index] {
+            b' ' | b'\n' | b'\r' | b'\t' => {}
+            _ => { return Ok(index); }
+        }
+        index += 1;
+    }
+    Err(JsonError::new(source, index))
+}
+
+#[inline(always)]
 fn parse_null(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 3 < source.len() {
@@ -21,6 +48,7 @@ fn parse_null(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
+#[inline(always)]
 fn parse_true(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 3 < source.len() {
@@ -31,6 +59,7 @@ fn parse_true(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
+#[inline(always)]
 fn parse_false(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     if index + 4 < source.len() {
@@ -41,13 +70,13 @@ fn parse_false(source: &str, index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
+#[inline(always)]
 fn parse_number(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mark = index;
     index += 1;
     while index < source.len() {
-        let b = bytes[index];
-        match b {
+        match bytes[index] {
             b'0'..=b'9' | b'+' | b'-' | b'.' | b'e' | b'E' => {}
             _ => {
                 return Ok(JsonItem::new(Slice::new(source, mark, index), JsonNumber));
@@ -58,6 +87,7 @@ fn parse_number(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
+#[inline(always)]
 fn parse_string(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     index += 1;
@@ -76,212 +106,134 @@ fn parse_string(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     Err(JsonError::new(source, index))
 }
 
-
 #[inline(always)]
-fn push_to_map<'a>(key: String, item: JsonItem<'a>, map: Option<BTreeMap<String, JsonItem<'a>>>) -> BTreeMap<String, JsonItem<'a>> {
-    let mut map = if let Some(map) = map {
-        map
-    } else {
-        BTreeMap::new()
+fn parse_unknown(source: &str, index: usize) -> Result<JsonItem, JsonError> {
+    let bytes = source.as_bytes();
+    return match bytes[index] {
+        b'n' => { Ok(parse_null(source, index)?) }
+        b't' => { Ok(parse_true(source, index)?) }
+        b'f' => { Ok(parse_false(source, index)?) }
+        b'+' | b'-' | b'0'..=b'9' => { Ok(parse_number(source, index)?) }
+        b'"' => { Ok(parse_string(source, index)?) }
+        b'{' => { Ok(parse_map(source, index)?) }
+        b'[' => { Ok(parse_array(source, index)?) }
+        _ => {
+            Err(JsonError::new(source, index))
+        }
     };
-    map.insert(key, item);
-    map
 }
 
+#[inline(always)]
 fn parse_map(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mark = index;
     index += 1;
     let mut map = None;
-    let mut key = None;
-    'main: loop {
-        return if let Some(k) = key {
-            while index < source.len() {
-                let b = bytes[index];
-                match b {
-                    b' ' | b':' => {}
-                    b'n' => {
-                        let json_null = parse_null(source, index)?;
-                        index = json_null.slice.end;
-                        map = Some(push_to_map(k, json_null, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b't' => {
-                        let json_true = parse_true(source, index)?;
-                        index = json_true.slice.end;
-                        map = Some(push_to_map(k, json_true, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b'f' => {
-                        let json_false = parse_false(source, index)?;
-                        index = json_false.slice.end;
-                        map = Some(push_to_map(k, json_false, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b'+' | b'-' | b'0'..=b'9' => {
-                        let json_number = parse_number(source, index)?;
-                        index = json_number.slice.end;
-                        map = Some(push_to_map(k, json_number, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b'"' => {
-                        let json_string = parse_string(source, index)?;
-                        index = json_string.slice.end + 1;
-                        map = Some(push_to_map(k, json_string, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b'{' => {
-                        let json_map = parse_map(source, index)?;
-                        index = json_map.slice.end;
-                        map = Some(push_to_map(k, json_map, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    b'[' => {
-                        let json_array = parse_array(source, index)?;
-                        index = json_array.slice.end;
-                        map = Some(push_to_map(k, json_array, map));
-                        key = None;
-                        continue 'main;
-                    }
-                    _ => {
-                        return Err(JsonError::new(source, index));
-                    }
-                }
-                index += 1;
+    loop {
+        // Spaces
+        index = skip_spaces(source, index)?;
+
+        // Check ending
+        match bytes[index] {
+            b'}' => {
+                return Ok(JsonItem::new_map(Slice::new(source, mark, index + 1), map));
             }
-            Err(JsonError::new(source, index))
+            b',' => {
+                index += 1;
+                index = skip_spaces(source, index)?;
+            }
+            _ => {
+                if !map.is_none() {
+                    return Err(JsonError::new(source, index));
+                }
+            }
+        }
+
+        // Key
+        let key = parse_string(source, index)?;
+        index = update_index(&key);
+
+        // Separator
+        index = skip_spaces(source, index)?;
+        if bytes[index] != b':' {
+            return Err(JsonError::new(source, index));
         } else {
-            while index < source.len() {
-                let b = bytes[index];
-                match b {
-                    b' ' | b',' | b'\n' | b'\r' | b'\t' => {}
-                    b'"' => {
-                        let json_string = parse_string(source, index)?;
-                        index = json_string.slice.end + 1;
-                        key = Some(json_string.slice.as_str().unwrap().to_owned());
-                        continue 'main;
-                    }
-                    b'}' => {
-                        return Ok(JsonItem::new_map(Slice::new(source, mark, index + 1), map));
-                    }
-                    _ => {
-                        return Err(JsonError::new(source, index));
-                    }
-                }
-                index += 1;
-            }
-            Err(JsonError::new(source, index))
-        };
+            index += 1;
+            index = skip_spaces(source, index)?;
+        }
+
+        // Value
+        let item = parse_unknown(source, index)?;
+        index = update_index(&item);
+
+        // Store
+        if let Some(m) = &mut map {
+            m.insert(Key::from(key.slice.as_str().unwrap().to_owned()), item);
+        } else {
+            let mut m = BTreeMap::new();
+            m.insert(Key::from(key.slice.as_str().unwrap().to_owned()), item);
+            map = Some(m);
+        }
     }
 }
 
-
 #[inline(always)]
-fn push_to_array<'a>(item: JsonItem<'a>, array: Option<Vec<JsonItem<'a>>>) -> Vec<JsonItem<'a>> {
-    let mut array = if let Some(array) = array {
-        array
-    } else {
-        Vec::with_capacity(2)
-    };
-    array.push(item);
-    array
-}
-
 fn parse_array(source: &str, mut index: usize) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mark = index;
     let mut array = None;
     index += 1;
-    while index < source.len() {
-        let b = bytes[index];
-        match b {
-            b' ' | b',' | b'\n' | b'\r' | b'\t' => {}
-            b'n' => {
-                let json_null = parse_null(source, index)?;
-                index = json_null.slice.end;
-                array = Some(push_to_array(json_null, array));
-                continue;
-            }
-            b't' => {
-                let json_true = parse_true(source, index)?;
-                index = json_true.slice.end;
-                array = Some(push_to_array(json_true, array));
-                continue;
-            }
-            b'f' => {
-                let json_false = parse_false(source, index)?;
-                index = json_false.slice.end;
-                array = Some(push_to_array(json_false, array));
-                continue;
-            }
-            b'+' | b'-' | b'0'..=b'9' => {
-                let json_number = parse_number(source, index)?;
-                index = json_number.slice.end;
-                array = Some(push_to_array(json_number, array));
-                continue;
-            }
-            b'"' => {
-                let json_string = parse_string(source, index)?;
-                index = json_string.slice.end + 1;
-                array = Some(push_to_array(json_string, array));
-                continue;
-            }
-            b'{' => {
-                let json_map = parse_map(source, index)?;
-                index = json_map.slice.end;
-                array = Some(push_to_array(json_map, array));
-                continue;
-            }
-            b'[' => {
-                let json_array = parse_array(source, index)?;
-                index = json_array.slice.end;
-                array = Some(push_to_array(json_array, array));
-                continue;
-            }
+    loop {
+        // Spaces
+        index = skip_spaces(source, index)?;
+
+        // Check ending
+        match bytes[index] {
             b']' => {
                 return Ok(JsonItem::new_array(Slice::new(source, mark, index + 1), array));
             }
+            b',' => {
+                index += 1;
+                index = skip_spaces(source, index)?;
+            }
             _ => {
-                return Err(JsonError::new(source, index));
+                if !array.is_none() {
+                    return Err(JsonError::new(source, index));
+                }
             }
         }
-        index += 1;
+
+        // Item
+        let item = parse_unknown(source, index)?;
+        index = update_index(&item);
+
+        // Store
+        if let Some(a) = &mut array {
+            a.push(item);
+        } else {
+            let mut a = Vec::with_capacity(DEFAULT_VEC_CAPACITY);
+            a.push(item);
+            array = Some(a);
+        }
     }
-    Err(JsonError::new(source, index))
 }
 
 pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mut index = 0_usize;
-    while index < source.len() {
-        match bytes[index] {
-            b' ' | b'\n' | b'\r' | b'\t' => {}
-            b'{' => {
-                return parse_map(source, index);
-            }
-            b'[' => {
-                return parse_array(source, index);
-            }
-            _ => {
-                return Err(JsonError::new(source, index));
-            }
-        }
-        index += 1;
-    }
-    Err(JsonError::new(source, index))
+    index = skip_spaces(source, index)?;
+    return match bytes[index] {
+        b'{' => { parse_map(source, index) }
+        b'[' => { parse_array(source, index) }
+        _ => { Err(JsonError::new(source, index)) }
+    };
 }
 
 #[cfg(test)]
 mod tests {
     use crate::parse;
 
-    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"b\": true,\"another\":  \"hey#çà@â&éè\" \r ,\"obj2\":{\"k\":{\"k2\":\"v\"}} \"num\":4.2344, \"int\":-234,  \"obj\":{\"a\":\"b\", \"c\":\"d\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":-4.5e-213,\"exp3\":3.7391238e+24,\"depth\":[\"a\",[\"b\",\"c\"]]}  ";
+    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"b\": true,\"another\":  \"hey#çà@â&éè\" \r ,\"obj2\":{\"k\":{\"k2\":\"v\"}}, \"num\":4.2344, \"int\":-234,  \"obj\":{\"a\":\"b\", \"c\":\"d\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":-4.5e-213,\"exp3\":3.7391238e+24,\"depth\":[\"a\",[\"b\",\"c\"]]}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
@@ -374,10 +326,10 @@ mod tests {
             Ok(parsed) => {
                 let mut iterator = parsed["obj"].entries().unwrap();
                 let (k, v) = iterator.next().unwrap();
-                assert_eq!(k, "a");
+                assert_eq!(k.key, "a");
                 assert_eq!(v.as_str(), Some("b"));
                 let (k, v) = iterator.next().unwrap();
-                assert_eq!(k, "c");
+                assert_eq!(k.key, "c");
                 assert_eq!(v.as_str(), Some("d"));
             }
             Err(error) => {

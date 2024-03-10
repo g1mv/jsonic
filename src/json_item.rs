@@ -4,6 +4,7 @@ use std::slice::Iter;
 
 use crate::json_type::JsonType;
 use crate::json_type::JsonType::{JsonArray, Void, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue, JsonEmptyArray, JsonEmptyMap};
+use crate::key::Key;
 use crate::slice::Slice;
 
 static EMPTY_ITEM: JsonItem = JsonItem::empty();
@@ -13,7 +14,7 @@ pub struct JsonItem<'a> {
     pub slice: Slice<'a>,
     pub json_type: JsonType,
     pub array: Option<Vec<JsonItem<'a>>>,
-    pub map: Option<BTreeMap<String, JsonItem<'a>>>,
+    pub map: Option<BTreeMap<Key, JsonItem<'a>>>,
 }
 
 impl<'a> JsonItem<'a> {
@@ -25,7 +26,7 @@ impl<'a> JsonItem<'a> {
         JsonItem { slice, json_type: if array.is_some() { JsonArray } else { JsonEmptyArray }, array, map: None }
     }
 
-    pub fn new_map(slice: Slice<'a>, map: Option<BTreeMap<String, JsonItem<'a>>>) -> Self {
+    pub fn new_map(slice: Slice<'a>, map: Option<BTreeMap<Key, JsonItem<'a>>>) -> Self {
         JsonItem { slice, json_type: if map.is_some() { JsonMap } else { JsonEmptyMap }, array: None, map }
     }
 
@@ -78,7 +79,7 @@ impl<'a> JsonItem<'a> {
         None
     }
 
-    pub fn entries(&self) -> Option<std::collections::btree_map::Iter<String, JsonItem>> {
+    pub fn entries(&self) -> Option<std::collections::btree_map::Iter<Key, JsonItem>> {
         if self.json_type == JsonMap {
             if let Some(map) = &self.map {
                 return Some(map.iter());
@@ -91,10 +92,10 @@ impl<'a> JsonItem<'a> {
 impl<'a> Index<&'a str> for JsonItem<'a> {
     type Output = JsonItem<'a>;
 
-    fn index(&self, key: &str) -> &Self::Output {
+    fn index(&self, key: &'a str) -> &Self::Output {
         if self.json_type == JsonMap {
             if let Some(map) = &self.map {
-                return map.get(key).unwrap_or(&EMPTY_ITEM);
+                return map.get(&Key::from(key.to_owned())).unwrap_or(&EMPTY_ITEM);
             }
         }
         &EMPTY_ITEM
