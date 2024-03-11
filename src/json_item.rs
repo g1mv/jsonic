@@ -3,7 +3,7 @@ use std::ops::Index;
 use std::slice::Iter;
 
 use crate::json_type::JsonType;
-use crate::json_type::JsonType::{JsonArray, JsonEmptyArray, JsonEmptyMap, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue, Void};
+use crate::json_type::JsonType::{Empty, JsonArray, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue};
 use crate::key::Key;
 use crate::slice::Slice;
 
@@ -11,10 +11,10 @@ static EMPTY_ITEM: JsonItem = JsonItem::empty();
 
 #[derive(Debug)]
 pub struct JsonItem {
-    pub slice: Slice,
-    pub json_type: JsonType,
-    pub array: Option<Vec<JsonItem>>,
-    pub map: Option<BTreeMap<Key, JsonItem>>,
+    pub(crate) slice: Slice,
+    pub(crate) json_type: JsonType,
+    pub(crate) array: Option<Vec<JsonItem>>,
+    pub(crate) map: Option<BTreeMap<Key, JsonItem>>,
 }
 
 impl JsonItem {
@@ -23,19 +23,19 @@ impl JsonItem {
     }
 
     pub fn new_array(slice: Slice, array: Option<Vec<JsonItem>>) -> Self {
-        JsonItem { slice, json_type: if array.is_some() { JsonArray } else { JsonEmptyArray }, array, map: None }
+        JsonItem { slice, json_type: JsonArray, array, map: None }
     }
 
     pub fn new_map(slice: Slice, map: Option<BTreeMap<Key, JsonItem>>) -> Self {
-        JsonItem { slice, json_type: if map.is_some() { JsonMap } else { JsonEmptyMap }, array: None, map }
+        JsonItem { slice, json_type: JsonMap, array: None, map }
     }
 
     pub const fn empty() -> Self {
-        JsonItem { slice: Slice::empty(), json_type: Void, array: None, map: None }
+        JsonItem { slice: Slice::empty(), json_type: Empty, array: None, map: None }
     }
 
     pub fn as_str(&self) -> Option<&str> {
-        if self.json_type == Void {
+        if self.json_type == Empty {
             None
         } else {
             Some(self.slice.as_str())
@@ -71,7 +71,11 @@ impl JsonItem {
     }
 
     pub fn exists(&self) -> bool {
-        self.json_type != Void
+        self.json_type != Empty
+    }
+
+    pub fn get_type(&self) -> &JsonType {
+        &self.json_type
     }
 
     pub fn elements(&self) -> Option<Iter<JsonItem>> {

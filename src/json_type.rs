@@ -5,9 +5,7 @@ pub enum JsonType {
     JsonFalse,
     JsonString,
     JsonNumber,
-    JsonEmptyMap,
     JsonMap,
-    JsonEmptyArray,
     JsonArray,
-    Void,
+    Empty,
 }
