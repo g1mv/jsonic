@@ -17,6 +17,9 @@ panic = "unwind"
 incremental = false
 overflow-checks = false
 
+[dependencies]
+smallvec = "1.13.1"
+
 [dev-dependencies]
 divan = "0.1.14"
 json = "0.12.4"
