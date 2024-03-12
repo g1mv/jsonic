@@ -1,20 +1,17 @@
-use std::collections::BTreeMap;
 use std::ops::Index;
 use std::slice::Iter;
-use crate::json_item::Container::{Array, Map};
 
+use crate::generics::{Container, MapIterator};
+use crate::generics::Container::{Array, MapBTree, MapVec};
+use crate::generics::IterMap::{IterMapBTree, IterMapVec};
 use crate::json_type::JsonType;
 use crate::json_type::JsonType::{Empty, JsonArray, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue};
 use crate::key::Key;
 use crate::slice::Slice;
 
-static EMPTY_ITEM: JsonItem = JsonItem::empty();
+const KEEP_VEC_THRESHOLD: usize = 64;
 
-#[derive(Debug)]
-enum Container<K, V> {
-    Array(Vec<V>),
-    Map(BTreeMap<K, V>),
-}
+static EMPTY_ITEM: JsonItem = JsonItem::empty();
 
 #[derive(Debug)]
 pub struct JsonItem {
@@ -35,10 +32,17 @@ impl JsonItem {
         }
     }
 
-    pub fn new_map(slice: Slice, map: Option<BTreeMap<Key, JsonItem>>) -> Self {
+    pub fn new_map(slice: Slice, map: Option<Vec<(Key, JsonItem)>>) -> Self {
         match map {
             None => { Self::new(slice, JsonMap) }
-            Some(map) => { JsonItem { slice, json_type: JsonMap, container: Some(Map(map)) } }
+            Some(map) => {
+                let container = if map.len() <= KEEP_VEC_THRESHOLD {
+                    MapVec(map)
+                } else {
+                    MapBTree(map.into_iter().map(|(k, v)| (k, v)).collect())
+                };
+                JsonItem { slice, json_type: JsonMap, container: Some(container) }
+            }
         }
     }
 
@@ -99,11 +103,13 @@ impl JsonItem {
         None
     }
 
-    pub fn entries(&self) -> Option<std::collections::btree_map::Iter<Key, JsonItem>> {
+    pub fn entries(&self) -> Option<MapIterator<Key, JsonItem>> {
         if let Some(container) = &self.container {
-            if let Map(map) = container {
-                return Some(map.iter());
-            }
+            return match container {
+                MapVec(map) => { Some(MapIterator { iter: IterMapVec(map.iter()) }) }
+                MapBTree(map) => { Some(MapIterator { iter: IterMapBTree(map.iter()) }) }
+                _ => { None }
+            };
         }
         None
     }
@@ -126,9 +132,18 @@ impl Index<&str> for JsonItem {
     type Output = JsonItem;
 
     fn index(&self, key: &str) -> &Self::Output {
+        let key = Key::from(Slice::from_str(key));
         if let Some(container) = &self.container {
-            if let Map(map) = container {
-                return map.get(&Key::from(Slice::from_str(key))).unwrap_or(&EMPTY_ITEM);
+            match container {
+                MapVec(map) => {
+                    for (k, v) in map {
+                        if key.eq(k) { return v; }
+                    }
+                }
+                MapBTree(map) => {
+                    return map.get(&key).unwrap_or(&EMPTY_ITEM);
+                }
+                _ => {}
             }
         }
         &EMPTY_ITEM

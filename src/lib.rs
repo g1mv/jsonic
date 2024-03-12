@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::json_error::JsonError;
 use crate::json_item::JsonItem;
 use crate::json_type::JsonType::{JsonFalse, JsonNull, JsonNumber, JsonString, JsonTrue};
@@ -12,6 +10,7 @@ pub mod json_item;
 
 pub mod json_type;
 pub mod key;
+pub mod generics;
 
 const DEFAULT_VEC_CAPACITY: usize = 2;
 
@@ -158,10 +157,10 @@ fn parse_map(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
 
         // Store
         if let Some(m) = &mut map {
-            m.insert(Key::from(key.slice), item);
+            m.push((Key::from(key.slice), item));
         } else {
-            let mut m = BTreeMap::new();
-            m.insert(Key::from(key.slice), item);
+            let mut m = Vec::with_capacity(DEFAULT_VEC_CAPACITY);
+            m.push((Key::from(key.slice), item));
             map = Some(m);
         }
     }
