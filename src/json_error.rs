@@ -1,36 +1,32 @@
 use std::fmt::{Display, Formatter, Result};
 use std::str::from_utf8;
 
-const SOURCE_SIZE: usize = 8192;
-const EXTRACT_PADDING: isize = 16;
+const EXTRACT_PADDING: usize = 8;
 
 #[derive(Debug)]
 pub struct JsonError {
     pub index: usize,
     pub extract: Option<String>,
-    pub source: Option<String>,
 }
 
 impl JsonError {
     pub fn new(bytes: &[u8], index: usize) -> Self {
-        let source = from_utf8(&bytes[0..usize::min(bytes.len(), SOURCE_SIZE)]);
-        let extract = from_utf8(&bytes[isize::max(0, index as isize - EXTRACT_PADDING) as usize..usize::min(bytes.len(), index + EXTRACT_PADDING as usize)]);
+        let extract = match from_utf8(&bytes[isize::max(0, index as isize - EXTRACT_PADDING as isize) as usize..usize::min(bytes.len(), index + EXTRACT_PADDING)]) {
+            Ok(extract) => { Some(extract.to_owned()) }
+            Err(_) => { None }
+        };
         return JsonError {
             index,
-            extract: match extract {
-                Ok(extract) => { Some(extract.to_owned()) }
-                Err(_) => { None }
-            },
-            source: match source {
-                Ok(source) => { if bytes.len() <= SOURCE_SIZE { Some(source.to_owned()) } else { Some(format!("{}...", source)) } }
-                Err(_) => { None }
-            },
+            extract,
         };
     }
 }
 
 impl Display for JsonError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "JSON error near '{}': index {} in {}", &self.extract.as_ref().unwrap_or(&String::from("?")), self.index, self.source.as_ref().unwrap_or(&String::from("?")))
+        match &self.extract {
+            Some(extract) => { write!(f, "JSON error near '{}': index {} in data", extract, self.index) }
+            None => { write!(f, "JSON error at index {} in data", self.index) }
+        }
     }
 }

@@ -8,11 +8,15 @@ use crate::slice::Slice;
 #[inline(always)]
 // Hash based on bytes at start/end and array length
 pub fn hash(bytes: &[u8]) -> u64 {
-    let mut hash = (bytes.len() as u64).shl(48);
-    for index in 0..usize::min(bytes.len() / 2, 3) {
+    let mut hash = (bytes.len() as u64).shl(56);
+    let mid = bytes.len() / 2;
+    for index in 0..usize::min(mid, 3) {
         hash += (bytes[index] as u64).shl(index.shl(3));
         let next_index = index + 1;
         hash += (bytes[bytes.len() - next_index] as u64).shl(next_index.shl(3));
+    }
+    if bytes.len() & 0x1 != 0 || bytes.len() > 7 {
+        hash += (bytes[mid] as u64).shl(48);
     }
     hash
 }

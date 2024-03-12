@@ -31,15 +31,8 @@ impl<'a, K, V> Iterator for MapIterator<'a, K, V> {
                     Some((k, v)) => { Some((k, v)) }
                 }
             }
-            IterMapBTree(iter_map) => {
-                match iter_map.next() {
-                    None => { None }
-                    Some((k, v)) => { Some((k, v)) }
-                }
-            }
-            IterEmpty() => {
-                None
-            }
+            IterMapBTree(iter_map) => { iter_map.next() }
+            IterEmpty() => { None }
         }
     }
 }
