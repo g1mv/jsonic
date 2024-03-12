@@ -1,9 +1,10 @@
+use std::iter;
 use std::ops::Index;
 use std::slice::Iter;
 
 use crate::generics::{Container, MapIterator};
 use crate::generics::Container::{Array, MapBTree, MapVec};
-use crate::generics::IterMap::{IterMapBTree, IterMapVec};
+use crate::generics::IterMap::{IterEmpty, IterMapBTree, IterMapVec};
 use crate::json_type::JsonType;
 use crate::json_type::JsonType::{Empty, JsonArray, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue};
 use crate::key::Key;
@@ -99,6 +100,10 @@ impl JsonItem {
             if let Array(array) = container {
                 return Some(array.iter());
             }
+        } else {
+            if self.json_type == JsonArray {
+                Some(iter::empty::<JsonItem>());
+            }
         }
         None
     }
@@ -110,6 +115,10 @@ impl JsonItem {
                 MapBTree(map) => { Some(MapIterator { iter: IterMapBTree(map.iter()) }) }
                 _ => { None }
             };
+        } else {
+            if self.json_type == JsonMap {
+                return Some(MapIterator { iter: IterEmpty() });
+            }
         }
         None
     }

@@ -1,6 +1,7 @@
 use std::collections::{btree_map, BTreeMap};
 use std::slice::Iter;
-use crate::generics::IterMap::{IterMapBTree, IterMapVec};
+
+use crate::generics::IterMap::{IterEmpty, IterMapBTree, IterMapVec};
 
 #[derive(Debug)]
 pub(crate) enum Container<K, V> {
@@ -10,6 +11,7 @@ pub(crate) enum Container<K, V> {
 }
 
 pub(crate) enum IterMap<'a, K, V> {
+    IterEmpty(),
     IterMapVec(Iter<'a, (K, V)>),
     IterMapBTree(btree_map::Iter<'a, K, V>),
 }
@@ -23,17 +25,20 @@ impl<'a, K, V> Iterator for MapIterator<'a, K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.iter {
-            IterMapVec(a) => {
-                match a.next() {
+            IterMapVec(iter_vec) => {
+                match iter_vec.next() {
                     None => { None }
                     Some((k, v)) => { Some((k, v)) }
                 }
             }
-            IterMapBTree(b) => {
-                match b.next() {
+            IterMapBTree(iter_map) => {
+                match iter_map.next() {
                     None => { None }
                     Some((k, v)) => { Some((k, v)) }
                 }
+            }
+            IterEmpty() => {
+                None
             }
         }
     }
