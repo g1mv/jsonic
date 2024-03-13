@@ -1,7 +1,8 @@
 use std::collections::{btree_map, BTreeMap};
 use std::slice::Iter;
 
-use crate::generics::IterMap::{IterEmpty, IterMapBTree, IterMapVec};
+use crate::generics::IterArray::{IterArrayEmpty, IterArrayVec};
+use crate::generics::IterMap::{IterMapBTree, IterMapEmpty, IterMapVec};
 
 #[derive(Debug)]
 pub(crate) enum Container<K, V> {
@@ -10,8 +11,28 @@ pub(crate) enum Container<K, V> {
     MapBTree(BTreeMap<K, V>),
 }
 
+pub(crate) enum IterArray<'a, V> {
+    IterArrayEmpty(),
+    IterArrayVec(Iter<'a, V>),
+}
+
+pub struct ArrayIterator<'a, V> {
+    pub(crate) iter: IterArray<'a, V>,
+}
+
+impl<'a, V> Iterator for ArrayIterator<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &mut self.iter {
+            IterArrayVec(iter_vec) => { iter_vec.next() }
+            IterArrayEmpty() => { None }
+        }
+    }
+}
+
 pub(crate) enum IterMap<'a, K, V> {
-    IterEmpty(),
+    IterMapEmpty(),
     IterMapVec(Iter<'a, (K, V)>),
     IterMapBTree(btree_map::Iter<'a, K, V>),
 }
@@ -32,7 +53,7 @@ impl<'a, K, V> Iterator for MapIterator<'a, K, V> {
                 }
             }
             IterMapBTree(iter_map) => { iter_map.next() }
-            IterEmpty() => { None }
+            IterMapEmpty() => { None }
         }
     }
 }

@@ -1,10 +1,9 @@
-use std::iter;
 use std::ops::Index;
-use std::slice::Iter;
 
-use crate::generics::{Container, MapIterator};
+use crate::generics::{ArrayIterator, Container, MapIterator};
 use crate::generics::Container::{Array, MapBTree, MapVec};
-use crate::generics::IterMap::{IterEmpty, IterMapBTree, IterMapVec};
+use crate::generics::IterArray::{IterArrayEmpty, IterArrayVec};
+use crate::generics::IterMap::{IterMapBTree, IterMapEmpty, IterMapVec};
 use crate::json_type::JsonType;
 use crate::json_type::JsonType::{Empty, JsonArray, JsonFalse, JsonMap, JsonNull, JsonNumber, JsonTrue};
 use crate::key::Key;
@@ -22,18 +21,18 @@ pub struct JsonItem {
 }
 
 impl JsonItem {
-    pub fn new(slice: Slice, json_type: JsonType) -> Self {
+    pub(crate) fn new(slice: Slice, json_type: JsonType) -> Self {
         JsonItem { slice, json_type, container: None }
     }
 
-    pub fn new_array(slice: Slice, array: Option<Vec<JsonItem>>) -> Self {
+    pub(crate) fn new_array(slice: Slice, array: Option<Vec<JsonItem>>) -> Self {
         match array {
             None => { Self::new(slice, JsonArray) }
             Some(array) => { JsonItem { slice, json_type: JsonArray, container: Some(Array(array)) } }
         }
     }
 
-    pub fn new_map(slice: Slice, map: Option<Vec<(Key, JsonItem)>>) -> Self {
+    pub(crate) fn new_map(slice: Slice, map: Option<Vec<(Key, JsonItem)>>) -> Self {
         match map {
             None => { Self::new(slice, JsonMap) }
             Some(map) => {
@@ -95,14 +94,14 @@ impl JsonItem {
         &self.json_type
     }
 
-    pub fn elements(&self) -> Option<Iter<JsonItem>> {
+    pub fn elements(&self) -> Option<ArrayIterator<JsonItem>> {
         if let Some(container) = &self.container {
             if let Array(array) = container {
-                return Some(array.iter());
+                return Some(ArrayIterator { iter: IterArrayVec(array.iter()) });
             }
         } else {
             if self.json_type == JsonArray {
-                Some(iter::empty::<JsonItem>());
+                return Some(ArrayIterator { iter: IterArrayEmpty() });
             }
         }
         None
@@ -117,7 +116,7 @@ impl JsonItem {
             };
         } else {
             if self.json_type == JsonMap {
-                return Some(MapIterator { iter: IterEmpty() });
+                return Some(MapIterator { iter: IterMapEmpty() });
             }
         }
         None
@@ -141,7 +140,7 @@ impl Index<&str> for JsonItem {
     type Output = JsonItem;
 
     fn index(&self, key: &str) -> &Self::Output {
-        let key = Key::from(Slice::from_str(key));
+        let key = Key::from_slice(Slice::from_str(key));
         if let Some(container) = &self.container {
             match container {
                 MapVec(map) => {

@@ -157,10 +157,10 @@ fn parse_map(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
 
         // Store
         if let Some(m) = &mut map {
-            m.push((Key::from(key.slice), item));
+            m.push((Key::from_slice(key.slice), item));
         } else {
             let mut m = Vec::with_capacity(DEFAULT_VEC_CAPACITY);
-            m.push((Key::from(key.slice), item));
+            m.push((Key::from_slice(key.slice), item));
             map = Some(m);
         }
     }
@@ -220,7 +220,7 @@ pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
 mod tests {
     use crate::parse;
 
-    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"b\": true,\"another\":  \"hey#çà@â&éè\" \r ,\"obj2\":{\"k\":{\"k2\":\"v\"}}, \"num\":4.2344, \"int\":-234,  \"obj\":{\"a\":\"b\", \"c\":\"d\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":-4.5e-213,\"exp3\":3.7391238e+24,\"depth\":[\"a\",[\"b\",\"c\"]]}  ";
+    const CORRECT_JSON: &str = " {\n\"test\": \"why not?\",\"b\": true,\"another one\":  \"hey#çà@â&éè\" \r ,\"obj2\":{\"k\":{\"k2\":\"v\"}}, \"num\":4.2344, \"int\":-234,  \"obj\":{\"a\":\"b\", \"c\":\"d\"}, \"arr\":[1,2,3],\"bool\":false, \"exp\":3.3e-21, \"exp2\":-4.5e-213,\"exp3\":3.7391238e+24,\"depth\":[\"a\",[\"b\",\"c\"]],\"emp_a\":[],\"emp_m\":{}}  ";
     const INCORRECT_JSON: &str = "{\"test\": \"num\", \"int\":234[] ,,}";
 
     #[test]
@@ -425,6 +425,40 @@ mod tests {
                 match parsed["a"][1].as_i128() {
                     None => { assert!(true); }
                     Some(_) => { assert!(false); }
+                }
+            }
+            Err(error) => {
+                assert!(false, "{}", error.to_string());
+            }
+        }
+    }
+
+    #[test]
+    fn empty_array_iterator() {
+        match parse(CORRECT_JSON) {
+            Ok(parsed) => {
+                if let Some(mut elements) = parsed["emp_a"].elements() {
+                    match elements.next() {
+                        None => { assert!(true); }
+                        Some(_) => { assert!(false); }
+                    }
+                }
+            }
+            Err(error) => {
+                assert!(false, "{}", error.to_string());
+            }
+        }
+    }
+
+    #[test]
+    fn empty_map_iterator() {
+        match parse(CORRECT_JSON) {
+            Ok(parsed) => {
+                if let Some(mut entries) = parsed["emp_m"].entries() {
+                    match entries.next() {
+                        None => { assert!(true); }
+                        Some(_) => { assert!(false); }
+                    }
                 }
             }
             Err(error) => {

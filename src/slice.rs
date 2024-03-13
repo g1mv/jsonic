@@ -4,20 +4,20 @@ use std::ptr::null;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 
-pub struct Slice {
-    pub ptr: *const u8,
-    pub len: usize,
+pub(crate) struct Slice {
+    pub(crate) ptr: *const u8,
+    pub(crate) len: usize,
 }
 
 impl Slice {
-    pub fn from_str(source: &str) -> Slice {
+    pub(crate) fn from_str(source: &str) -> Slice {
         return Slice {
             ptr: source.as_ptr(),
             len: source.len(),
         };
     }
 
-    pub fn from_bytes(bytes: &[u8], start: usize, end: usize) -> Slice {
+    pub(crate) fn from_bytes(bytes: &[u8], start: usize, end: usize) -> Slice {
         return Slice {
             ptr: unsafe { bytes.as_ptr().byte_add(start) },
             len: end - start,
