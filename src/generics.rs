@@ -25,8 +25,19 @@ impl<'a, V> Iterator for ArrayIterator<'a, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.iter {
-            IterArrayVec(iter_vec) => { iter_vec.next() }
             IterArrayEmpty() => { None }
+            IterArrayVec(iter_vec) => { iter_vec.next() }
+        }
+    }
+}
+
+impl<'a, V> ToOwned for ArrayIterator<'a, V> {
+    type Owned = Self;
+
+    fn to_owned(&self) -> Self::Owned {
+        match &self.iter {
+            IterArrayEmpty() => { ArrayIterator { iter: IterArrayEmpty() } }
+            IterArrayVec(iter_vec) => { ArrayIterator { iter: IterArrayVec(iter_vec.to_owned()) } }
         }
     }
 }
@@ -46,6 +57,7 @@ impl<'a, K, V> Iterator for MapIterator<'a, K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.iter {
+            IterMapEmpty() => { None }
             IterMapVec(iter_vec) => {
                 match iter_vec.next() {
                     None => { None }
@@ -53,7 +65,18 @@ impl<'a, K, V> Iterator for MapIterator<'a, K, V> {
                 }
             }
             IterMapBTree(iter_map) => { iter_map.next() }
-            IterMapEmpty() => { None }
+        }
+    }
+}
+
+impl<'a, K, V> ToOwned for MapIterator<'a, K, V> {
+    type Owned = Self;
+
+    fn to_owned(&self) -> Self::Owned {
+        match &self.iter {
+            IterMapEmpty() => { MapIterator { iter: IterMapEmpty() } }
+            IterMapVec(iter_vec) => { MapIterator { iter: IterMapVec(iter_vec.to_owned()) } }
+            IterMapBTree(iter_btree) => { MapIterator { iter: IterMapBTree(iter_btree.to_owned()) } }
         }
     }
 }
