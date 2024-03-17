@@ -1,3 +1,4 @@
+/// An enum representing JSON types
 #[derive(PartialEq, Debug)]
 pub enum JsonType {
     JsonNull,

@@ -1,10 +1,11 @@
 [package]
 name = "jsonic"
-version = "0.2.10"
+version = "0.2.11"
 edition = "2021"
 description = "Fast, small JSON parsing library for rust with no dependencies"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/k0dai/jsonic"
+repository = "https://github.com/g1mv/jsonic"
+authors = ["Guillaume Voirin"]
 
 [profile.release]
 opt-level = 3
@@ -21,6 +22,8 @@ overflow-checks = false
 divan = "0.1.14"
 json = "0.12.4"
 serde_json = "1.0.114"
+sonic-rs = "0.3"
+simd-json = "0.13.8"
 
 [[bench]]
 name = "jsonic"
@@ -32,4 +35,12 @@ harness = false
 
 [[bench]]
 name = "serde_json"
+harness = false
+
+[[bench]]
+name = "sonic-rs"
+harness = false
+
+[[bench]]
+name = "simd-json"
 harness = false

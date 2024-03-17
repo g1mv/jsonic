@@ -205,6 +205,10 @@ fn parse_array(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
     }
 }
 
+/// Main library function. Parses JSON data.
+///
+/// # Arguments
+/// * `source` - Text content to be parsed
 pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mut index = 0_usize;

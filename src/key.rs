@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 use std::ops::{Shl, Shr};
 
 use crate::slice::Slice;
@@ -21,6 +20,7 @@ fn hash(bytes: &[u8]) -> u64 {
     hash
 }
 
+/// A struct representing JSON object keys
 #[derive(Debug)]
 pub struct Key {
     pub(crate) slice: Slice,
@@ -28,6 +28,10 @@ pub struct Key {
 }
 
 impl Key {
+    /// Create a key using &str
+    ///
+    /// # Arguments
+    /// * `source` - Key id
     pub fn from_str(source: &str) -> Self {
         Self::from_slice(Slice::from_str(source))
     }
@@ -37,14 +41,9 @@ impl Key {
         Key { slice, hash }
     }
 
+    ///
     pub fn as_str(&self) -> &str {
         self.slice.as_str()
-    }
-}
-
-impl Hash for Key {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.slice.as_bytes().hash(state);
     }
 }
 

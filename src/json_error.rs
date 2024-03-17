@@ -3,14 +3,15 @@ use std::str::from_utf8;
 
 const EXTRACT_PADDING: usize = 8;
 
+/// Parsing errors
 #[derive(Debug)]
 pub struct JsonError {
-    pub index: usize,
-    pub extract: Option<String>,
+    index: usize,
+    extract: Option<String>,
 }
 
 impl JsonError {
-    pub fn new(bytes: &[u8], index: usize) -> Self {
+    pub(crate) fn new(bytes: &[u8], index: usize) -> Self {
         let extract = match from_utf8(&bytes[isize::max(0, index as isize - EXTRACT_PADDING as isize) as usize..usize::min(bytes.len(), index + EXTRACT_PADDING)]) {
             Ok(extract) => { Some(extract.to_owned()) }
             Err(_) => { None }
@@ -19,6 +20,17 @@ impl JsonError {
             index,
             extract,
         };
+    }
+
+
+    /// Get error index (position) in source content
+    pub fn get_index(&self) -> usize {
+        self.index
+    }
+
+    /// Returns an optional text extract near the error index
+    pub fn get_extract(&self) -> &Option<String> {
+        &self.extract
     }
 }
 

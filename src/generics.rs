@@ -16,6 +16,7 @@ pub(crate) enum IterArray<'a, V> {
     IterArrayVec(Iter<'a, V>),
 }
 
+/// Array elements iterator
 pub struct ArrayIterator<'a, V> {
     pub(crate) iter: IterArray<'a, V>,
 }
@@ -48,6 +49,7 @@ pub(crate) enum IterMap<'a, K, V> {
     IterMapBTree(btree_map::Iter<'a, K, V>),
 }
 
+/// Object entries iterator
 pub struct MapIterator<'a, K, V> {
     pub(crate) iter: IterMap<'a, K, V>,
 }
