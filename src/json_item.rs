@@ -52,7 +52,8 @@ impl JsonItem {
     }
 
     /// Returns &str value of item.
-    /// This only returns None if the item is non-existent.
+    /// This only returns `None` if the item is non-existent.
+    /// In all other cases (even for `null`, `true`, `false`, numbers, arrays and objects), the text content of the item is returned, as extracted from the source data.
     pub fn as_str(&self) -> Option<&str> {
         if self.json_type == Empty {
             None
@@ -61,7 +62,7 @@ impl JsonItem {
         }
     }
 
-    /// Tries to convert item to f64. If the conversion fails, returns None.
+    /// Tries to convert item to `f64`. If the conversion fails, returns `None`.
     pub fn as_f64(&self) -> Option<f64> {
         if self.json_type != JsonNumber {
             None
@@ -70,8 +71,8 @@ impl JsonItem {
         }
     }
 
-    /// Tries to convert item to an i128 integer. If the conversion fails, returns None.
-    /// Resulting i128 can then be easily converted to other integer types using "as".
+    /// Tries to convert item to an `i128` integer. If the conversion fails, returns `None`.
+    /// Resulting `i128` can then be converted to other integer types as required.
     pub fn as_i128(&self) -> Option<i128> {
         if self.json_type != JsonNumber {
             None
@@ -80,7 +81,7 @@ impl JsonItem {
         }
     }
 
-    /// Tries to convert item to a bool. If the conversion fails, returns None.
+    /// Tries to convert item to a `bool`. If the conversion fails, returns `None`.
     pub fn as_bool(&self) -> Option<bool> {
         match self.json_type {
             JsonTrue => { Some(true) }
@@ -104,7 +105,8 @@ impl JsonItem {
         &self.json_type
     }
 
-    /// If the item is an array, returns an iterator over array elements. Otherwise, returns None.
+    /// If the item is an array, returns an iterator over array elements. If the array is empty (`[]`), an empty iterator is returned.
+    /// Otherwise, returns `None`.
     pub fn elements(&self) -> Option<ArrayIterator<JsonItem>> {
         if let Some(container) = &self.container {
             if let Array(array) = container {
@@ -118,7 +120,8 @@ impl JsonItem {
         None
     }
 
-    /// If the item is an object, returns an iterator over object entries. Otherwise, returns None.
+    /// If the item is an object, returns an iterator over object entries. If the object contains no entries (`{}`), an empty iterator is returned.
+    /// Otherwise, returns `None`.
     pub fn entries(&self) -> Option<MapIterator<Key, JsonItem>> {
         if let Some(container) = &self.container {
             return match container {
@@ -152,7 +155,7 @@ impl Index<&str> for JsonItem {
     type Output = JsonItem;
 
     fn index(&self, key: &str) -> &Self::Output {
-        let key = Key::from_slice(Slice::from_str(key));
+        let key = Key::from_str(key);
         if let Some(container) = &self.container {
             match container {
                 MapVec(map) => {

@@ -209,6 +209,18 @@ fn parse_array(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
 ///
 /// # Arguments
 /// * `source` - Text content to be parsed
+///
+/// # Example
+///
+/// ```rust
+/// fn main() {
+///    let json = "{\"jsonic\": \"Fast, small JSON parsing library for rust with no dependencies\"}";
+///
+///    match jsonic::parse(json) {
+///        Ok(parsed) => { println!("Describe jsonic? {:?}", parsed["jsonic"].as_str()); }
+///        Err(error) => { eprintln!("{}", error); }
+///    }
+/// }
 pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mut index = 0_usize;

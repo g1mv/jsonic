@@ -8,10 +8,8 @@ Fast, small JSON parsing library for rust with no dependencies
 **jsonic** is a JSON parser. It aims at providing high-speed extraction of JSON data.
 It does not convert JSON to structs at this stage.
 
-It can be easily used as a drop-in replacement for other libraries, due to its simple code semantics.
-
 ### Performance
-Blazing-fast JSON parsing is made possible by some of the following design choices:
+Here are some of the design choices for this library:
 
 * small-footprint data structures to speedup memory/cache access
 * object containers with hybrid data structures, using arrays to store low numbers of key/value pairs, and binary tree maps otherwise
@@ -28,17 +26,17 @@ fn main() {
     let json = "{\"jsonic\": \"Fast, small JSON parsing library for rust with no dependencies\"}";
 
     match jsonic::parse(json) {
-        Some(parsed) => { println!("Describe jsonic? {}", parsed["jsonic"].as_str()); }
-        Err(error) => { eprintln!("{}", error.to_string()); }
+        Ok(parsed) => { println!("Describe jsonic? {:?}", parsed["jsonic"].as_str()); }
+        Err(error) => { eprintln!("{}", error); }
     }
 }
 ```
 
 ### Benchmark
 
-Benchmarking is provided via ```cargo bench```. It compares **jsonic**'s parsing speed with other JSON parsing engines written in rust.
+To get an overview of **jsonic**'s parsing performance compared to other JSON parsing engines written in rust, use ```cargo bench```.
 
-Here is a sample run on an Apple iMac M1, 8GB RAM, macOS Sonoma 14.4 (23E214):
+Here is a sample run on an Apple iMac M1, 8GB RAM, macOS Sonoma:
 
 ```shell
      Running benches/json-rust.rs (target/release/deps/json_rust-0d2370885fb224f4)

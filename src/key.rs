@@ -28,11 +28,7 @@ pub struct Key {
 }
 
 impl Key {
-    /// Create a key using &str
-    ///
-    /// # Arguments
-    /// * `source` - Key id
-    pub fn from_str(source: &str) -> Self {
+    pub(crate) fn from_str(source: &str) -> Self {
         Self::from_slice(Slice::from_str(source))
     }
 
@@ -41,7 +37,7 @@ impl Key {
         Key { slice, hash }
     }
 
-    ///
+    /// Key text value
     pub fn as_str(&self) -> &str {
         self.slice.as_str()
     }
