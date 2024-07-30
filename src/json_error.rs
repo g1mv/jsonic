@@ -42,3 +42,5 @@ impl Display for JsonError {
         }
     }
 }
+
+impl std::error::Error for JsonError {}
