@@ -14,7 +14,7 @@ fn hash(bytes: &[u8]) -> u64 {
         hash += (bytes[index] as u64).shl(shift);
         hash += (bytes[bytes.len() - (index + 1)] as u64).shl(shift + 8_usize);
     }
-    if bytes.len() & 0x1 != 0 || bytes.len() & 0xfffffffffffffff8 != 0 {
+    if bytes.len() & 0x1 != 0 || bytes.len() as u64 & 0xfffffffffffffff8 != 0 {
         hash += (bytes[mid] as u64).shl(48);
     }
     hash
