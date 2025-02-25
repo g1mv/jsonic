@@ -2,7 +2,10 @@
 
 Fast, small JSON parsing library for rust with no dependencies
 
-##
+[![MIT licensed](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE-MIT)
+[![Apache-2.0 licensed](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE-APACHE)
+[![Crates.io](https://img.shields.io/crates/v/jsonic.svg?maxAge=2592000)](https://crates.io/crates/jsonic)
+[![Build Status](https://github.com/g1mv/jsonic/actions/workflows/ci.yml/badge.svg)](https://github.com/g1mv/jsonic/actions)
 
 ### Quick overview
 **jsonic** is a JSON parser. It aims at providing high-speed extraction of JSON data.
