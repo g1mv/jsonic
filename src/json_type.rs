@@ -14,7 +14,7 @@
 /// let json = "{\"a\":\"b\"}";
 ///
 /// if let Ok(parsed) = jsonic::parse(json) {
-///     assert!(parsed["c"].get_type() == &Empty);
+///     assert_eq!(parsed["c"].get_type(), &Empty);
 /// }
 #[derive(PartialEq, Debug)]
 pub enum JsonType {

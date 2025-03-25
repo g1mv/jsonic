@@ -11,17 +11,17 @@ pub(crate) struct Slice {
 
 impl Slice {
     pub(crate) fn from_str(source: &str) -> Slice {
-        return Slice {
+        Slice {
             ptr: source.as_ptr(),
             len: source.len(),
-        };
+        }
     }
 
     pub(crate) fn from_bytes(bytes: &[u8], start: usize, end: usize) -> Slice {
-        return Slice {
+        Slice {
             ptr: unsafe { bytes.as_ptr().byte_add(start) },
             len: end - start,
-        };
+        }
     }
 
     pub const fn empty() -> Self {

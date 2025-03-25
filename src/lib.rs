@@ -101,7 +101,7 @@ fn parse_string(bytes: &[u8], mut index: usize) -> Result<JsonItem, JsonError> {
 
 #[inline(always)]
 fn parse_item(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
-    return match bytes[index] {
+    match bytes[index] {
         b'n' => { Ok(parse_null(bytes, index)?) }
         b't' => { Ok(parse_true(bytes, index)?) }
         b'f' => { Ok(parse_false(bytes, index)?) }
@@ -112,7 +112,7 @@ fn parse_item(bytes: &[u8], index: usize) -> Result<JsonItem, JsonError> {
         _ => {
             Err(JsonError::new(bytes, index))
         }
-    };
+    }
 }
 
 #[inline(always)]
@@ -225,11 +225,11 @@ pub fn parse(source: &str) -> Result<JsonItem, JsonError> {
     let bytes = source.as_bytes();
     let mut index = 0_usize;
     index = skip_spaces(bytes, index)?;
-    return match bytes[index] {
+    match bytes[index] {
         b'{' => { parse_map(bytes, index) }
         b'[' => { parse_array(bytes, index) }
         _ => { Err(JsonError::new(bytes, index)) }
-    };
+    }
 }
 
 #[cfg(test)]

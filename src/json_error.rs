@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 use std::str::from_utf8;
+use std::error::Error;
 
 const EXTRACT_PADDING: usize = 8;
 
@@ -16,10 +17,10 @@ impl JsonError {
             Ok(extract) => { Some(extract.to_owned()) }
             Err(_) => { None }
         };
-        return JsonError {
+        JsonError {
             index,
             extract,
-        };
+        }
     }
 
 
@@ -43,4 +44,4 @@ impl Display for JsonError {
     }
 }
 
-impl std::error::Error for JsonError {}
+impl Error for JsonError {}
